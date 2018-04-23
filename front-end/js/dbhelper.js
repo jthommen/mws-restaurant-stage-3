@@ -28,7 +28,7 @@ class DBHelper {
 			*/
 	static fetchRestaurants(callback) {
 
-		// Crating idb object store
+		// Creating idb object store
 		var dbPromise = idb.open('restaurants', 2, (upgradeDB) => {
 			var restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value, Key!
 		});
