@@ -56,21 +56,9 @@ fetchData = () => {
 
             getAPIData( (restaurants) => {
 
-                console.log('IDB: Checking for changes')
-                dbPromise.then( (db) => {
-                    let tx = db.transaction('restaurants', 'readwrite');
-                    let store = tx.objectStore('restaurants');
-                    
-                    // TODO: Use web worker to do this.                
-                    restaurants.forEach( restaurant => {
-                        store.get(restaurant.id).then( idbRestaurant => {
-                            if(JSON.stringify(restaurant) === JSON.stringify(idbRestaurant)) {
-                                store.put(restaurant)
-                                    .then( (restaurant) => console.log('IDB: Restaurant updated', restaurant));
-                            }
-                        });
-                    });
-                });
+                let worker = new Worker('js/worker.js');
+                worker.postMessage(restaurants);
+                worker.onmessage = (e) => console.log(e.data);
 
             });
 
