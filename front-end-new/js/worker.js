@@ -26,6 +26,8 @@ onmessage = (e) => {
             });
         });
     });
-
+    
+    // TODO: Trigger update if restaurant changed
+    
     postMessage('Worker IDB: Restaurants checked');
 }
