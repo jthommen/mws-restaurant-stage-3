@@ -1,86 +1,111 @@
-fetchData();
+document.addEventListener('DOMContentLoaded', (event) => {
+    fetchData();
+});
 
-function API_URL(id) {
-    const port = 1337;
-    id = id || null;
-    
-    switch(id) {
-        case null:
-            return `http://localhost:${port}/restaurants`;
-        case id:
-            return `http://localhost:${port}/restaurants/${id}`;
-        default:
-            return;
+// Service to fetch api data from server
+getAPIData = (callback) => {
+
+    // Configure api data here: Port & URL's
+    API_URL = (id) => {
+        const port = 1337;
+        id = id || null;
+        
+        switch(id) {
+            case null:
+                return `http://localhost:${port}/restaurants`;
+            case id:
+                return `http://localhost:${port}/restaurants/${id}`;
+            default:
+                return;
+        }
     }
 
-}
+    fetch(API_URL()).then( (response) => {
+        console.log('Server: Restaurants fetched');
+        return response.json();
+    }).then( (restaurants) => {
+        callback(restaurants);
+    }).catch( error => console.error(error));
+
+};
+
 
 // Get's data from the server and puts it into the DB
-function fetchData() {
+fetchData = () => {
     
     // CHECK IF DATA IN IDB
     // Check if idb store exists, create otherwise
-    var dbPromise = idb.open('restaurants', 1, (upgradeDB) => {
-        var restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
+    let dbPromise = idb.open('restaurants', 1, (upgradeDB) => {
+        let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
+        restaurantStore.createIndex('by-cuisine', 'cuisine_type');
+        restaurantStore.createIndex('by-neighborhood', 'neighborhood');
     });
 
     // Get restaurants from the store
     dbPromise.then( (db) => {
-        var tx = db.transaction('restaurants');
-        var restaurantStore = tx.objectStore('restaurants');
+        let tx = db.transaction('restaurants');
+        let restaurantStore = tx.objectStore('restaurants');
         return restaurantStore.getAll();
     }).then( (restaurants) => {
-        let idbFull = false;
 
         // Restaurants found
         if(restaurants.length > 0) {
-            console.log('Restaurants: ', restaurants);
-            idbFull = true;
+            console.log('IDB: Restaurants retrieved ', restaurants);
 
-            // TODO: Replace with callback to trigger update later
-            return restaurants;
-        } else {
-            console.log('No restaurants found in IDB');
-        }
+            renderRestaurants(restaurants, 'all');
 
-        // Fetch restaurants from server
-        fetch(API_URL()).then( (response) => {
-            console.log(response);
-            return response.json();
-        })
-        .then( (restaurants) => {
-            console.log(restaurants);
+            getAPIData( (restaurants) => {
 
-            // TODO: Get Data to render
-            if(!idbFull){
-                // render page
-            } else {
-                // check if data is different than in IDB
-                // if so, update page, otherwise discard and return
-            }
-
-            // Put data into IDB
-            dbPromise.then( db => {
-                var tx = db.transaction('restaurants', 'readwrite');
-                var restaurantStore = tx.objectStore('restaurants');
-
-                restaurants.forEach( restaurant => {
-                    // TODO: Search if it already exists / if data is the same
-                    restaurantStore.put(restaurant);
+                console.log('IDB: Checking for changes')
+                dbPromise.then( (db) => {
+                    let tx = db.transaction('restaurants', 'readwrite');
+                    let store = tx.objectStore('restaurants');
+                    
+                    // TODO: Use web worker to do this.                
+                    restaurants.forEach( restaurant => {
+                        store.get(restaurant.id).then( idbRestaurant => {
+                            if(JSON.stringify(restaurant) === JSON.stringify(idbRestaurant)) {
+                                store.put(restaurant)
+                                    .then( (restaurant) => console.log('IDB: Restaurant updated', restaurant));
+                            }
+                        });
+                    });
                 });
 
-                // TODO: Ensure DB is not overloaded with entries --> Delete old ones
             });
-        }).catch( error => console.error(error))
 
-    })
+        } else {
+            console.log('IDB: No restaurants found');
+            getAPIData((restaurants) => {
+                
+                renderRestaurants(restaurants, 'all');
+
+                // Put data into IDB
+                dbPromise.then( db => {
+                    let tx = db.transaction('restaurants', 'readwrite');
+                    let restaurantStore = tx.objectStore('restaurants');
+
+                    restaurants.forEach( restaurant => {
+                        restaurantStore.put(restaurant);
+                    });
+
+                    // TODO: Ensure DB is not overloaded with entries --> Delete old ones
+
+                    return tx.complete;
+                }).then( () => console.log('IDB: Objects stored'));
+            });
+        }
+
+        
+        
+    });
 
 };
 
 
 // RENDER RESTAURANT DATA
-function renderRestaurants(data, param) {
-
+renderRestaurants = (data, param) => {
+    console.log('Render: Restaurants, ', data);
 
 };
 
