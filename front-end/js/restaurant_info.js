@@ -50,6 +50,7 @@ fetchRestaurantFromURL = (callback) => {
  */
 
 fillRestaurantHTML = (restaurant = self.restaurant) => {
+
 	const name = document.getElementById('restaurant-name');
 	name.innerHTML = restaurant.name;
 
@@ -77,8 +78,16 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 		fillRestaurantHoursHTML();
 	}
 	// fill reviews
-	fillReviewsHTML();
+	fetchReviews();
+	
 };
+
+fetchReviews = () => {
+	DBHelper.getReviewsByRestaurant(self.restaurant.id, (error, reviews) => {
+		self.restaurant.reviews = reviews;
+		fillReviewsHTML();
+	});
+}
 
 /**
  * Create restaurant operating hours HTML table and add it to the webpage.

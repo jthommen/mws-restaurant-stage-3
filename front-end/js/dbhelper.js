@@ -14,24 +14,24 @@ class DBHelper {
 	// Service to fetch api data from server
 	// Configure api data here: Port & URL's
 
-	static API_URL(id) {
+	static getAPIData(api, callback) {
+
 		const port = 1337;
-		id = id || null;
-		
-		switch(id) {
-			case null:
-				return `http://localhost:${port}/restaurants`;
-			case id:
-				return `http://localhost:${port}/restaurants/${id}`;
+		let api_url;
+			
+		switch(api) {
+			case 'restaurants':
+				api_url = `http://localhost:${port}/restaurants`;
+				break;
+			case 'reviews':
+				api_url = `http://localhost:${port}/reviews`;
+				break;
 			default:
-				return;
+				break;
 		}
-	}
 
-	static getAPIData(callback) {
-
-		fetch(DBHelper.API_URL()).then( (response) => {
-			console.log('Server: Restaurants fetched');
+		fetch(api_url).then( (response) => {
+			console.log(`Server: ${api} fetched`);
 			return response.json();
 		}).then( (restaurants) => {
 			callback(restaurants);
@@ -40,65 +40,96 @@ class DBHelper {
 	};
 
 	// Get's data from the server and puts it into the DB
-	static fetchRestaurants(mode='all', callback) {
+	static fetchRestaurants(mode, callback) {
 		console.log('FetchMode: ', mode);
 
 		// CHECK IF DATA IN IDB
 		// Check if idb store exists, create otherwise
-		let dbPromise = idb.open('restaurants', 1, (upgradeDB) => {
+		let RestaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
 			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
-			restaurantStore.createIndex('by-cuisine', 'cuisine_type');
-			restaurantStore.createIndex('by-neighborhood', 'neighborhood');
 		});
+
+		let ReviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
+			let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
+			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
+		});
+		
 	
 		// Get restaurants from the store
-		dbPromise.then( (db) => {
-			let tx = db.transaction('restaurants');
-			let restaurantStore = tx.objectStore('restaurants');
-			return restaurantStore.getAll();
-		}).then( (restaurants) => {
-	
-			// Restaurants found
-			if(restaurants.length > 0) {
-				console.log('IDB: Restaurants retrieved ', restaurants);
-	
-				callback(null, restaurants);
-				
-				if(mode === 'all' || mode === 'restaurantByCuisineAndNeighborhood') {
-					DBHelper.getAPIData( (restaurants) => {
-	
-						let worker = new Worker('js/worker.js');
-						worker.postMessage(restaurants);
-						worker.onmessage = (e) => console.log(e.data);
+		if(mode !== 'reviews'){
+			RestaurantDbPromise.then( (db) => {
+				let tx = db.transaction('restaurants');
+				let restaurantStore = tx.objectStore('restaurants');
+				return restaurantStore.getAll();
+			}).then( (restaurants) => {
 		
-					});
-				}
-				
-			} else {
-				console.log('IDB: No restaurants found');
-
-
-					DBHelper.getAPIData((restaurants) => {
-					
+				// Restaurants found
+				if(restaurants.length > 0) {
+					console.log('IDB: Restaurants retrieved ', restaurants);
+		
 					callback(null, restaurants);
-	
-					// Put data into IDB
-					dbPromise.then( db => {
-						let tx = db.transaction('restaurants', 'readwrite');
-						let restaurantStore = tx.objectStore('restaurants');
-	
-						restaurants.forEach( restaurant => {
-							restaurantStore.put(restaurant);
-						});
-	
-						return tx.complete;
-	
-					}).then( () => console.log('IDB: Objects stored'));
-				});
-			} 
+					
+					if(mode === 'restaurantById' || mode === 'restaurantByCuisineAndNeighborhood') {
+						DBHelper.getAPIData('restaurants', (restaurants) => {
+		
+							let worker = new Worker('js/worker.js');
+							worker.postMessage(restaurants);
+							worker.onmessage = (e) => console.log(e.data);
 			
-		});
-	
+						});
+					}
+					
+				} else {
+					console.log('IDB: No restaurants found');
+
+						DBHelper.getAPIData('restaurants', (restaurants) => {
+							
+							callback(null, restaurants);
+			
+							// Put data into IDB
+							RestaurantDbPromise.then( db => {
+								let tx = db.transaction('restaurants', 'readwrite');
+								let restaurantStore = tx.objectStore('restaurants');
+			
+								restaurants.forEach( restaurant => {
+									restaurantStore.put(restaurant);
+								});
+			
+								return tx.complete;
+		
+						}).then( () => console.log('IDB: Objects stored'));
+					});
+				} 
+				
+			});
+		}
+
+		if(mode === 'reviews') {
+			// Get Reviews from the store
+			ReviewDbPromise.then( db => {
+				let tx = db.transaction('reviews');
+				let reviewStore = tx.objectStore('reviews');
+				return reviewStore.getAll();
+			}).then( (reviews) => {
+				DBHelper.getAPIData('reviews', (reviews) => {
+
+					callback(null, reviews);
+					// Put Reviews in DB
+					ReviewDbPromise.then( db => {
+						let tx = db.transaction('reviews', 'readwrite');
+						let reviewStore = tx.objectStore('reviews');
+
+						reviews.forEach( review => {
+							reviewStore.put(review);
+						});
+
+					});
+
+				});
+			});
+		}
+
+		
 	};
 
 
@@ -223,6 +254,21 @@ class DBHelper {
 				callback(null, uniqueCuisines);
 			}
 		});
+	}
+
+	static getReviewsByRestaurant(restaurantId, callback) {
+		DBHelper.fetchRestaurants('reviews', (error, reviews) => {
+			if(error) {
+				callback(error, null);
+			} else {
+				console.log('Total reviews', reviews);
+				const filteredReviews = reviews.filter( review => review.restaurant_id === restaurantId );
+				console.log('Filtered reviews', filteredReviews);
+				callback(null, filteredReviews);
+			}
+
+		});
+
 	}
 
 	/**
