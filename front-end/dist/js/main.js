@@ -113,8 +113,19 @@ updateRestaurants = () => {
 		} else {
 			resetRestaurants(restaurants);
 			fillRestaurantsHTML();
+			reLoadImages();
 		}
 	});
+};
+
+reLoadImages = () => {
+	let images = document.getElementsByTagName('img');
+
+	for (var i = 0; i < images.length; i++) {
+		if (images[i].getAttribute('data-src')) {
+			images[i].setAttribute('src', images[i].getAttribute('data-src'));
+		}
+	}
 };
 
 /**
@@ -159,7 +170,6 @@ createRestaurantHTML = restaurant => {
 	var regex = /undefined/;
 	if (!regex.test(DBHelper.imageUrlForRestaurant(restaurant))) {
 		image.setAttribute('data-src', DBHelper.imageUrlForRestaurant(restaurant));
-		console.log('Image defined!');
 	} else {
 		image.setAttribute('data-src', '/img/icons/icon-placeholder.png');
 		console.log('Image undefined!');
