@@ -64,7 +64,6 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 	var regex = /undefined/;
 	if(!regex.test(DBHelper.imageUrlForRestaurant(restaurant))) {
 		image.src = DBHelper.imageUrlForRestaurant(restaurant);
-		console.log('Image defined!');
 	} else {
 		image.src = '/img/icons/icon-placeholder.png';
 		console.log('Image undefined!');
@@ -149,7 +148,19 @@ createReviewHTML = (review) => {
 	header.appendChild(name);
 
 	const date = document.createElement('div');
-	date.innerHTML = review.date;
+
+	formatTime = (timestamp) => {
+		const createdAt = new Date(timestamp);
+		const createdAtDate = createdAt.getDate();
+		const createdAtMonth = createdAt.getMonth();
+		const createdAtYear = createdAt.getFullYear();
+		const createdAtHour = createdAt.getHours();
+		const createdAtMinute = createdAt.getMinutes()
+		return `${createdAtYear}-${createdAtMonth}-${createdAtDate}, ${createdAtHour}:${createdAtMinute}`;
+	}
+
+	date.innerHTML = 'Created: ' + formatTime(review.createdAt) + '</br>Changed: ' + formatTime(review.updatedAt);
+
 	date.setAttribute('class', 'review-date');
 	header.appendChild(date);
 

@@ -1,13 +1,3 @@
-// Lazy load images on initil page load
-window.addEventListener('load', function() {
-	let images = document.getElementsByTagName('img');
-
-	for(var i=0; i < images.length; i++) {
-		if (images[i].getAttribute('data-src')) {
-			images[i].setAttribute('src', images[i].getAttribute('data-src'));
-		}
-	}
-}, false);
 
 // Database Helper Functions
 class DBHelper {
@@ -45,11 +35,11 @@ class DBHelper {
 
 		// CHECK IF DATA IN IDB
 		// Check if idb store exists, create otherwise
-		let RestaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
+		let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
 			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
 		});
 
-		let ReviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
+		let reviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
 			let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
 			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
 		});
@@ -57,7 +47,7 @@ class DBHelper {
 	
 		// Get restaurants from the store
 		if(mode !== 'reviews'){
-			RestaurantDbPromise.then( (db) => {
+			restaurantDbPromise.then( (db) => {
 				let tx = db.transaction('restaurants');
 				let restaurantStore = tx.objectStore('restaurants');
 				return restaurantStore.getAll();
@@ -87,7 +77,7 @@ class DBHelper {
 							callback(null, restaurants);
 			
 							// Put data into IDB
-							RestaurantDbPromise.then( db => {
+							restaurantDbPromise.then( db => {
 								let tx = db.transaction('restaurants', 'readwrite');
 								let restaurantStore = tx.objectStore('restaurants');
 			
@@ -106,7 +96,7 @@ class DBHelper {
 
 		if(mode === 'reviews') {
 			// Get Reviews from the store
-			ReviewDbPromise.then( db => {
+			reviewDbPromise.then( db => {
 				let tx = db.transaction('reviews');
 				let reviewStore = tx.objectStore('reviews');
 				return reviewStore.getAll();
@@ -115,7 +105,7 @@ class DBHelper {
 
 					callback(null, reviews);
 					// Put Reviews in DB
-					ReviewDbPromise.then( db => {
+					reviewDbPromise.then( db => {
 						let tx = db.transaction('reviews', 'readwrite');
 						let reviewStore = tx.objectStore('reviews');
 
@@ -128,7 +118,6 @@ class DBHelper {
 				});
 			});
 		}
-
 		
 	};
 
@@ -261,9 +250,7 @@ class DBHelper {
 			if(error) {
 				callback(error, null);
 			} else {
-				console.log('Total reviews', reviews);
 				const filteredReviews = reviews.filter( review => review.restaurant_id === restaurantId );
-				console.log('Filtered reviews', filteredReviews);
 				callback(null, filteredReviews);
 			}
 
@@ -298,4 +285,30 @@ class DBHelper {
 		});
 		return marker;
 	}
+
+	static toggleFavorite(mode, id) {
+
+		let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
+			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'});
+		});
+
+		restaurantDbPromise.then( db => {
+
+			let tx = db.transaction('restaurants');
+			let restaurantStore = tx.objectStore('restaurants');
+			return restaurantStore.get(parseInt(id));
+
+		}).then(restaurant => {
+
+			mode ? restaurant.is_favorite = true : restaurant.is_favorite = false;
+			restaurantDbPromise.then( db => {
+				let tx = db.transaction('restaurants', 'readwrite');
+				let restaurantStore = tx.objectStore('restaurants');
+				restaurantStore.put(restaurant);
+				return restaurantStore.get(parseInt(id));
+			}).then( (restaurant) => console.log(`Restaurant ${restaurant.name} Favorized!`));
+			
+
+		})
+	};
 }

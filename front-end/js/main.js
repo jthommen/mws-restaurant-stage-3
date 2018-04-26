@@ -112,7 +112,6 @@ updateRestaurants = () => {
 		} else {
 			resetRestaurants(restaurants);
 			fillRestaurantsHTML();
-			reLoadImages();
 		}
 	});
 };
@@ -126,6 +125,7 @@ reLoadImages = () => {
 			images[i].setAttribute('src', images[i].getAttribute('data-src'));
 		}
 	}
+	console.log('Images Lazy Loaded!');
 }
 
 /**
@@ -195,6 +195,26 @@ createRestaurantHTML = (restaurant) => {
 	more.href = DBHelper.urlForRestaurant(restaurant);
 	li.append(more);
 
+	const favorize = document.createElement('img');
+	favorize.className = 'favorize';
+	favorize.id = restaurant.id;
+	restaurant.is_favorite ? favorize.setAttribute('src', '/img/icons/favorized.png'): favorize.setAttribute('src', '/img/icons/favorite.png');
+
+	favorize.onclick = function toggleFavorite() {
+		
+		if(this.classList.contains('favorized')) {
+			this.src = '/img/icons/favorite.png';
+			this.classList.toggle('favorized');
+			DBHelper.toggleFavorite(false, this.id);
+		} else {
+			this.src = '/img/icons/favorized.png';
+			this.classList.toggle('favorized');
+			DBHelper.toggleFavorite(true, this.id);
+		}
+	};
+
+	li.append(favorize);
+	
 	return li;
 };
 
@@ -210,4 +230,7 @@ addMarkersToMap = (restaurants = self.restaurants) => {
 		});
 		self.markers.push(marker);
 	});
+
+	reLoadImages();
+
 };
