@@ -4,27 +4,40 @@ class DBHelper {
 	// Service to fetch api data from server
 	// Configure api data here: Port & URL's
 
-	static getAPIData(api, callback) {
+	static getAPIData(api, callback, id=null, param=null) {
 
 		const port = 1337;
 		let api_url;
-			
+		let fetch_options;
+
 		switch(api) {
 			case 'restaurants':
 				api_url = `http://localhost:${port}/restaurants`;
+				fetch_options = {method: 'GET'}
 				break;
 			case 'reviews':
 				api_url = `http://localhost:${port}/reviews`;
+				fetch_options = {method: 'GET'}
+				break;
+			case 'favorize':
+				api_url = `http://localhost:${port}/restaurants/${id}/?is_favorite=${param}`;
+				fetch_options = {method: 'PUT'}
 				break;
 			default:
 				break;
 		}
 
-		fetch(api_url).then( (response) => {
-			console.log(`Server: ${api} fetched`);
-			return response.json();
-		}).then( (restaurants) => {
-			callback(restaurants);
+		fetch(api_url,fetch_options).then( (response) => {
+			console.log(`Server: ${api} Called`);
+			
+			const contentType = response.headers.get('content-type');
+			if(contentType && contentType.indexOf('application/json') !== -1) {
+				return response.json();
+			} else { 
+				return 'API call successfull';
+			}
+		}).then( (data) => {
+			callback(data);
 		}).catch( error => console.error(error));
 
 	};
@@ -288,27 +301,31 @@ class DBHelper {
 
 	static toggleFavorite(mode, id) {
 
+		id = parseInt(id);
+
 		let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
 			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'});
 		});
+
+		DBHelper.getAPIData('favorize', () => console.log('Server: updated!'), id, mode);
 
 		restaurantDbPromise.then( db => {
 
 			let tx = db.transaction('restaurants');
 			let restaurantStore = tx.objectStore('restaurants');
-			return restaurantStore.get(parseInt(id));
+			return restaurantStore.get(id);
 
 		}).then(restaurant => {
 
 			mode ? restaurant.is_favorite = true : restaurant.is_favorite = false;
+
 			restaurantDbPromise.then( db => {
 				let tx = db.transaction('restaurants', 'readwrite');
 				let restaurantStore = tx.objectStore('restaurants');
 				restaurantStore.put(restaurant);
-				return restaurantStore.get(parseInt(id));
+				return restaurantStore.get(id);
 			}).then( (restaurant) => console.log(`Restaurant ${restaurant.name} Favorized!`));
 			
-
-		})
+		});
 	};
 }
