@@ -63,31 +63,31 @@
       </div>
       <div class="modal-body">
         <label for="name">Author:</label></br>
-        <input name="name" type="text" />
+        <input id="review-author" name="name" type="text"/>
 
         <div class="rating-container">
           <p>Rating:</p>
           <div class="rating">
-              <input name="rating" id="rating5" type="radio" value="5" />
+              <input name="rating" id="review-rating5" type="radio" value="5" />
               <label for="rating5" title="5 stars">☆</label>
 
-              <input name="rating" id="rating4" type="radio" value="4" />
+              <input name="rating" id="review-rating4" type="radio" value="4" />
               <label for="rating4" title="4 stars">☆</label>
 
-              <input name="rating" id="rating3" type="radio" value="3" />
+              <input name="rating" id="review-rating3" type="radio" value="3" />
               <label for="rating3" title="3 stars">☆</label>
 
-              <input name="rating" id="rating2" type="radio" value="2" />
+              <input name="rating" id="review-rating2" type="radio" value="2" />
               <label for="rating2" title="2 stars">☆</label>
 
-              <input name="rating" id="rating1" type="radio" value="1" />
+              <input name="rating" id="review-rating1" type="radio" value="1"/>
               <label for="rating1" title="1 stars">☆</label>
           </div>
         </div>
         <label for="comments">Comments:</label></br>
-        <textarea name="comments"></textarea></br>
-
-        <button type="submit">Add Review</button>
+        <textarea id="review-comments" name="comments"></textarea></br>
+        <div id="form-error"></div>
+        <button type="submit" onclick="addReview()">Add Review</button>
       </div>
     </div>
   </div>

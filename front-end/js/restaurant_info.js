@@ -203,6 +203,27 @@ window.onload = (event) => {
 	modal.style.display = 'block';
 }
 
+// Form validation & submission
+addReview = () => {
+	let name = document.getElementById('review-author').value;
+	let comments = document.getElementById('review-comments').value;
+
+	let nameError, ratingError, commentsError;
+
+	// Basic Form Validation
+	name.length < 2 ? nameError = true: nameError = false;
+	
+	if(document.querySelector('input[name="rating"]:checked')) {
+		let rating = document.querySelector('input[name="rating"]:checked').value;
+		ratingError = false;
+	} else {
+		ratingError = true;
+	}
+	comments.length >= 250 || comments.length < 25 ? commentsError = true : commentsError = false;
+
+	console.log(`Errors - Name: ${nameError}, Rating: ${ratingError}, Comments: ${commentsError}`);
+}
+
 /**
  * Add restaurant name to the breadcrumb navigation menu
  */
