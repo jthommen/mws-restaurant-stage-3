@@ -306,8 +306,8 @@ class DBHelper {
 		});
 
 		DBHelper.getAPIData('favorize', () => {
-			console.log(`Server: Restaurant ID ${id} updated!`), id, mode
-		});
+			console.log(`Server: Restaurant ID ${id} updated!`)}, id, mode
+		);
 
 		restaurantDbPromise.then( db => {
 			let tx = db.transaction('restaurants');

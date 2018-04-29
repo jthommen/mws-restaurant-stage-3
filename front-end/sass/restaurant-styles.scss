@@ -154,56 +154,202 @@
     font-size: 1.8em;
     font-weight: 200;
     letter-spacing: 0;
+    margin-top: 7px;
+    display: flex;
+    float:left;
 }
 
-  #reviews-list {
-    margin: 0;
-    padding: 0;
-  }
-  .review {
-    background-color: #fff;
-    color: #666;
-    border: 2px solid #f3f3f3;
-    border-top-left-radius: 25px;
-    border-bottom-right-radius: 25px;
-    display: block;
-    margin: 0 0 30px;
+#reviews-container button {
+  background-color: #f18200;
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 1.3em;
+  margin-bottom: 25px;
+  display: flex;
+  float: right;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0, 0.4);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 15% auto;
+  border: 1px solid grey;
+  width: 90%;
+  border-radius: 5px;
+  margin-top: 15%;
+  padding: 0;
+}
+
+.modal-header {
+  background-color: #0275d8;
+  color: white;
+  overflow: hidden;
+}
+
+.modal-header h2 {
+  margin: 0;
+  padding: 10px;
+  float: left;
+}
+
+.close {
+  font-size: 28px;
+  font-weight: bold;
+  float: right;
+  padding: 8px;
+}
+
+.close:hover, .close:focus {
+  color: #f18200;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 15px;
+  font-size: 1.3em;
+}
+
+.modal-body input[type=text] {
+  border: 1px solid grey;
+  width: 100%;
+  height: 25px;
+}
+
+.modal-body textarea {
+  border: 1px solid grey;
+  width: 100%;
+  height: 150px; 
+}
+
+.modal-body button[type=submit]{
+  background-color: #f18200;
+  border-radius: 10px;
+  margin-top: 15px;
+  padding: 10px;
+  font-size: 1.2em;
+  color: white;
+}
+
+.rating-container {
+  overflow: hidden;
+  margin: 10px 0;  
+}
+
+.rating-container p{
+  vertical-align: middle;
+  display: inline-block;
+}
+
+// Stars Div
+.rating {
+  padding: 0;
+  border: none;
+  unicode-bidi: bidi-override;
+  direction: rtl;
+  text-align: left;
+  user-select: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0, 0);
+  -webkit-tap-highlight-color: transparent;
+  display: inline-block;
+}
+
+// The Stars
+.rating > label {
+  display: inline-block;
+  position: relative;
+  width: 1.1em;
+}
+
+.rating > *:hover,
+.rating > *:hover ~ label,
+.rating:not(:hover) > input:checked ~label {
+  color: transparent;
+  cursor: inherit;
+}
+
+.rating > *:hover:before,
+.rating > *:hover ~ label:before,
+.rating:not(:hover) > input:checked ~label:before {
+  content: '\2605';
+  position: absolute;
+  left: 0;
+  color: black;
+}
+
+.rating > input {
+  position: relative;
+  transform: scale(3);
+  top: -0.5em;
+  margin-left: -2.5em;
+  z-index: 2;
+  opacity: 0;
+}
+
+#reviews-list {
+  margin: 0;
+  padding: 0;
+}
+
+.review {
+  background-color: #fff;
+  color: #666;
+  border: 2px solid #f3f3f3;
+  border-top-left-radius: 25px;
+  border-bottom-right-radius: 25px;
+  display: block;
+  margin: 0 0 30px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.review-header {
+    background-color: #000;
+    color: #fff;
     overflow: hidden;
-    position: relative;
-    width: 100%;
-  }
-  .review-header {
-      background-color: #000;
-      color: #fff;
-      overflow: hidden;
-      padding: 20px;
-  }
+    padding: 20px;
+}
 
-  .reviewer-name {
-      float: left;
-      font-size: 1.5em;
-      font-weight: 200;
-      color: #fff;
-  }
+.reviewer-name {
+    float: left;
+    font-size: 1.5em;
+    font-weight: 200;
+    color: #fff;
+}
 
-  .review-date {
-      float: right;
-      font-size: 1.1em;
-      color: #999;
-  }
+.review-date {
+    float: right;
+    font-size: 1.1em;
+    color: #999;
+}
 
-  .review-rating {
-      background-color: #f18200;
-      color: #fff;
-      text-transform: uppercase;
-      padding: 3px 15px;
-      margin: 10px 10px 10px 0;
-      border-radius: 3px;
-      display: inline-block;
-  }
+.review-rating {
+    background-color: #f18200;
+    color: #fff;
+    text-transform: uppercase;
+    padding: 3px 15px;
+    margin: 10px 10px 10px 0;
+    border-radius: 3px;
+    display: inline-block;
+}
 
-  .review-body {
-      padding: 10px;
-      font-size: 1.1em;
-      line-height: 1.4em;
-  }
+.review-body {
+    padding: 10px;
+    font-size: 1.1em;
+    line-height: 1.4em;
+}

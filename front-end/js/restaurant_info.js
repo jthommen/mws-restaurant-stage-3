@@ -117,6 +117,16 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	title.innerHTML = 'Reviews';
 	container.appendChild(title);
 
+	// Create add review modal
+	const addReviewButton = document.createElement('button');
+	addReviewButton.id = 'toggle-review-modal';
+	addReviewButton.innerHTML = 'Add Review';
+	addReviewButton.onclick = () => {
+		modal.style.display = 'block';
+	};
+
+	container.appendChild(addReviewButton);
+
 	if (!reviews) {
 		const noReviews = document.createElement('p');
 		noReviews.innerHTML = 'No reviews yet!';
@@ -175,6 +185,23 @@ createReviewHTML = (review) => {
 
 	return container;
 };
+
+// Bring review modal to life
+let modal = document.getElementById('add-review-modal');
+let closeBtn = document.getElementsByClassName('close')[0];
+
+closeBtn.onclick = () => modal.style.display = "none";
+
+window.onclick = (event) => {
+	if(event.target == modal) {
+		modal.style.display = 'none';
+	}
+}
+
+// load modal on load to better develop
+window.onload = (event) => {
+	modal.style.display = 'block';
+}
 
 /**
  * Add restaurant name to the breadcrumb navigation menu
