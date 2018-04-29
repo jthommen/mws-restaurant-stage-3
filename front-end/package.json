@@ -1,7 +1,7 @@
 {
-  "name": "mws-restaurant-stage-2-front-end",
+  "name": "mws-restaurant-stage-3",
   "version": "1.0.0",
-  "description": "frontend for stage 2 of the restaurant app",
+  "description": "Udacity Mobile Web Specialist Nanodegree Project Stage 3",
   "main": "gulpfile.js",
   "directories": {
     "test": "tests"
