@@ -19,9 +19,27 @@ class DBHelper {
 				api_url = `http://localhost:${port}/reviews`;
 				fetch_options = {method: 'GET'}
 				break;
+			case 'addReview':
+				api_url = `http://localhost:${port}/reviews`;
+				
+				const review = {
+					"restaurant_id": param[3],
+					"name": param[0],
+					"rating": param[1],
+					"comments": param[2]
+				};
+
+				fetch_options = {
+					method: 'POST',
+					body: JSON.stringify(review),
+					headers: new Headers({
+						'Content-Type': 'application/json'
+					}) 
+				};
+				break;
 			case 'favorize':
 				api_url = `http://localhost:${port}/restaurants/${id}/?is_favorite=${param}`;
-				fetch_options = {method: 'PUT'}
+				fetch_options = {method: 'PUT'};
 				break;
 			default:
 				break;
@@ -31,7 +49,7 @@ class DBHelper {
 			console.log(`Server: ${api} Called`);
 			
 			const contentType = response.headers.get('content-type');
-			if(contentType && contentType.indexOf('application/json') !== -1) {
+			if(contentType && contentType.indexOf('application/json') !== -1 ) {
 				return response.json();
 			} else { 
 				return 'API call successfull';
@@ -306,8 +324,7 @@ class DBHelper {
 		});
 
 		DBHelper.getAPIData('favorize', () => {
-			console.log(`Server: Restaurant ID ${id} updated!`)}, id, mode
-		);
+			console.log(`Server: Restaurant ID ${id} updated!`)}, id, mode);
 
 		restaurantDbPromise.then( db => {
 			let tx = db.transaction('restaurants');
@@ -327,4 +344,22 @@ class DBHelper {
 			
 		});
 	};
+
+	static addReview(review, callback) {
+
+		// Check if reviews db exists
+		let reviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
+			let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
+			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
+		});
+
+		if(!navigator.onLine){
+			//store locally
+		} else {
+			DBHelper.getAPIData('addReview', (data)=> callback(data), null, review);
+			console.log('data sent to api');
+		}
+
+
+	}
 }

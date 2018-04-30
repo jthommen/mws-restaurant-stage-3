@@ -19,6 +19,24 @@ class DBHelper {
 				api_url = `http://localhost:${port}/reviews`;
 				fetch_options = { method: 'GET' };
 				break;
+			case 'addReview':
+				api_url = `http://localhost:${port}/reviews`;
+
+				const review = {
+					"restaurant_id": param[3],
+					"name": param[0],
+					"rating": param[1],
+					"comments": param[2]
+				};
+
+				fetch_options = {
+					method: 'POST',
+					body: JSON.stringify(review),
+					headers: new Headers({
+						'Content-Type': 'application/json'
+					})
+				};
+				break;
 			case 'favorize':
 				api_url = `http://localhost:${port}/restaurants/${id}/?is_favorite=${param}`;
 				fetch_options = { method: 'PUT' };
@@ -303,5 +321,21 @@ class DBHelper {
 				return restaurantStore.get(id);
 			}).then(restaurant => console.log(`Restaurant ${restaurant.name} Favorized!`));
 		});
+	}
+
+	static addReview(review, callback) {
+
+		// Check if reviews db exists
+		let reviewDbPromise = idb.open('reviews', 1, upgradeDB => {
+			let reviewStore = upgradeDB.createObjectStore('reviews', { keyPath: 'id' });
+			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
+		});
+
+		if (!navigator.onLine) {
+			//store locally
+		} else {
+			DBHelper.getAPIData('addReview', data => callback(data), null, review);
+			console.log('data sent to api');
+		}
 	}
 }

@@ -179,27 +179,28 @@ createRestaurantHTML = (restaurant) => {
 
 	// Toggle favorize icon
 	const favorize = document.createElement('img');
-	favorize.className = 'favorize';
+	favorize.classList.add('favorize');
 	favorize.id = restaurant.id;
-	if(restaurant.is_favorite){
-		favorize.setAttribute('src', '/img/icons/favorized.png');
+
+	if(restaurant.is_favorite === true || restaurant.is_favorite === 'true'){
+		favorize.setAttribute('src', '/img/icons/favorized.svg'); // TODO: Fix bug on load with wrong class
 		favorize.classList.add('favorized');
 	} else {
-		favorize.setAttribute('src', '/img/icons/favorite.png');
+		favorize.setAttribute('src', '/img/icons/favorite.svg');
 	}
 
 	favorize.onclick = function toggleFavorite() {
-		console.log('Favorize toggled, mode is: ', this.classList.contains('favorized') );
 		
 		if(this.classList.contains('favorized')) {
-			this.src = '/img/icons/favorite.png';
-			this.classList.toggle('favorized');
+			this.src = '/img/icons/favorite.svg';
+			this.classList.remove('favorized');
 			DBHelper.toggleFavorite(false, this.id);
 		} else {
-			this.src = '/img/icons/favorized.png';
-			this.classList.toggle('favorized');
+			this.src = '/img/icons/favorized.svg';
+			this.classList.add('favorized');
 			DBHelper.toggleFavorite(true, this.id);
 		}
+		console.log('Favorize toggled, mode is: ', this.classList.contains('favorized') );
 	};
 
 	li.append(favorize);

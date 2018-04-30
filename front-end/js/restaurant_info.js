@@ -169,7 +169,7 @@ createReviewHTML = (review) => {
 		return `${createdAtYear}-${createdAtMonth}-${createdAtDate}, ${createdAtHour}:${createdAtMinute}`;
 	}
 
-	date.innerHTML = 'Created: ' + formatTime(review.createdAt) + '</br>Changed: ' + formatTime(review.updatedAt);
+	date.innerHTML = formatTime(review.createdAt);
 
 	date.setAttribute('class', 'review-date');
 	header.appendChild(date);
@@ -205,23 +205,40 @@ window.onload = (event) => {
 
 // Form validation & submission
 addReview = () => {
+	event.preventDefault();
+	let restaurantId = getParameterByName('id');
 	let name = document.getElementById('review-author').value;
+	let rating;
 	let comments = document.getElementById('review-comments').value;
 
-	let nameError, ratingError, commentsError;
+	let errors = [];
+	let errorContainer = document.getElementById('form-error');
 
 	// Basic Form Validation
-	name.length < 2 ? nameError = true: nameError = false;
+	if(name.length < 2 || name.length > 50) errors.push('<p>Please enter a name with 3-50 characters.</p>');
 	
 	if(document.querySelector('input[name="rating"]:checked')) {
-		let rating = document.querySelector('input[name="rating"]:checked').value;
-		ratingError = false;
+		rating = document.querySelector('input[name="rating"]:checked').value;
 	} else {
-		ratingError = true;
+		errors.push('<p>Please choose a rating.</p>');
 	}
-	comments.length >= 250 || comments.length < 25 ? commentsError = true : commentsError = false;
+	if(comments.length > 250 || comments.length < 0) errors.push('<p>Please write comments with between 25-250 characters in length. </p>');
+	
+	if(errors.length > 0) {
+		errorContainer.innerHTML = errors.join('');
+		errorContainer.style.padding = '10px';
+	} else {
+		errorContainer.innerHTML = '';
+		const review = [name, rating, comments, restaurantId];
 
-	console.log(`Errors - Name: ${nameError}, Rating: ${ratingError}, Comments: ${commentsError}`);
+		DBHelper.addReview(review, () => DBHelper.getReviewsByRestaurant(self.restaurant.id, (error, reviews) => {
+			self.restaurant.reviews = reviews;
+			fillReviewsHTML();
+		}));
+		
+		document.getElementById('review-form').reset();
+		modal.style.display = 'none';
+	}
 }
 
 /**
