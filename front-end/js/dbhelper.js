@@ -13,19 +13,23 @@ class DBHelper {
 		switch(api) {
 			case 'restaurants':
 				api_url = `http://localhost:${port}/restaurants`;
-				fetch_options = {method: 'GET'}
+				fetch_options = {method: 'GET'};
 				break;
 			case 'reviews':
 				api_url = `http://localhost:${port}/reviews`;
-				fetch_options = {method: 'GET'}
+				fetch_options = {method: 'GET'};
+				break;
+			case 'reviewById':
+				api_url = `http://localhost:${port}/reviews/?restaurant_id=${id}`;
+				fetch_options = {method: 'GET'};
 				break;
 			case 'addReview':
 				api_url = `http://localhost:${port}/reviews`;
 				
 				const review = {
-					"restaurant_id": param[3],
+					"restaurant_id": parseInt(param[3]),
 					"name": param[0],
-					"rating": param[1],
+					"rating": parseInt(param[1]),
 					"comments": param[2]
 				};
 
@@ -279,15 +283,13 @@ class DBHelper {
 	}
 
 	static getReviewsByRestaurant(restaurantId, callback) {
-		DBHelper.fetchData('reviews', (error, reviews) => {
-			if(error) {
-				callback(error, null);
-			} else {
-				const filteredReviews = reviews.filter( review => review.restaurant_id === restaurantId );
-				callback(null, filteredReviews);
-			}
-
-		});
+		DBHelper.getAPIData('reviewById', (reviews) => {
+				console.log(reviews);
+				// console.log('Unfiltred: ', reviews);
+				// const filteredReviews = reviews.filter( review => review.restaurant_id === restaurantId );
+				// console.log('Filtered: ', filteredReviews);
+				callback(null, reviews);
+		}, restaurantId);
 
 	}
 
@@ -346,12 +348,6 @@ class DBHelper {
 	};
 
 	static addReview(review, callback) {
-
-		// Check if reviews db exists
-		let reviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
-			let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
-			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
-		});
 
 		if(!navigator.onLine){
 			//store locally

@@ -115,19 +115,24 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
  */
 fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	const container = document.getElementById('reviews-container');
-	const title = document.createElement('h3');
-	title.innerHTML = 'Reviews';
-	container.appendChild(title);
+
+	if (!document.getElementById('review-title')) {
+		const title = document.createElement('h3');
+		title.id = 'review-title';
+		title.innerHTML = 'Reviews';
+		container.appendChild(title);
+	}
 
 	// Create add review modal
-	const addReviewButton = document.createElement('button');
-	addReviewButton.id = 'toggle-review-modal';
-	addReviewButton.innerHTML = 'Add Review';
-	addReviewButton.onclick = () => {
-		modal.style.display = 'block';
-	};
-
-	container.appendChild(addReviewButton);
+	if (!document.getElementById('toggle-review-modal')) {
+		const addReviewButton = document.createElement('button');
+		addReviewButton.id = 'toggle-review-modal';
+		addReviewButton.innerHTML = 'Add Review';
+		addReviewButton.onclick = () => {
+			modal.style.display = 'block';
+		};
+		container.appendChild(addReviewButton);
+	}
 
 	if (!reviews) {
 		const noReviews = document.createElement('p');
@@ -136,6 +141,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 		return;
 	}
 	const ListContainer = document.getElementById('reviews-list');
+	ListContainer.innerHTML = '';
 	reviews.forEach(review => {
 		ListContainer.appendChild(createReviewHTML(review));
 	});
@@ -233,7 +239,7 @@ addReview = () => {
 		errorContainer.innerHTML = '';
 		const review = [name, rating, comments, restaurantId];
 
-		DBHelper.addReview(review, () => DBHelper.getReviewsByRestaurant(self.restaurant.id, (error, reviews) => {
+		DBHelper.addReview(review, () => DBHelper.getReviewsByRestaurant(restaurantId, (error, reviews) => {
 			self.restaurant.reviews = reviews;
 			fillReviewsHTML();
 		}));
