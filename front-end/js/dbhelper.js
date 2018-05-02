@@ -1,37 +1,38 @@
+// API Handling
+class ApiService {
 
-// Database Helper Functions
-class DBHelper {
-
-	// Service to fetch api data from server
-	// Configure apis call here: API, callback, restaurant/review ID and optional parameters
-	static getAPIData(api, callback, id=null, param=null) {
+	static fetchApiData(api, callback){
 
 		const port = 1337;
 		let api_url;
 		let fetch_options;
 
-		switch(api) {
+		switch(api.name) {
 			case 'restaurants':
 				api_url = `http://localhost:${port}/restaurants`;
 				fetch_options = {method: 'GET'};
 				break;
+			case 'restaurantById':
+				api_url = `http://localhost:${port}/restaurants/restaurant_id=${api.id}`;
+				fetch_options = {method: 'GET'};
 			case 'reviews':
 				api_url = `http://localhost:${port}/reviews`;
 				fetch_options = {method: 'GET'};
 				break;
 			case 'reviewById':
-				api_url = `http://localhost:${port}/reviews/?restaurant_id=${id}`;
+				api_url = `http://localhost:${port}/reviews/?restaurant_id=${api.id}`;
 				fetch_options = {method: 'GET'};
 				break;
 			case 'addReview':
 				api_url = `http://localhost:${port}/reviews`;
 				
-				const review = {
-					"restaurant_id": parseInt(param[3]),
-					"name": param[0],
-					"rating": parseInt(param[1]),
-					"comments": param[2]
-				};
+				let review = api.data; 
+				// {
+				// 	"restaurant_id": parseInt(param[3]),
+				// 	"name": param[0],
+				// 	"rating": parseInt(param[1]),
+				// 	"comments": param[2]
+				// };
 
 				fetch_options = {
 					method: 'POST',
@@ -42,7 +43,7 @@ class DBHelper {
 				};
 				break;
 			case 'favorize':
-				api_url = `http://localhost:${port}/restaurants/${id}/?is_favorite=${param}`;
+				api_url = `http://localhost:${port}/restaurants/${api.id}/?is_favorite=${api.data}`;
 				fetch_options = {method: 'PUT'};
 				break;
 			default:
@@ -50,7 +51,7 @@ class DBHelper {
 		}
 
 		fetch(api_url,fetch_options).then( (response) => {
-			console.log(`Server: ${api} Called`);
+			console.log(`Server: ${api.name} Called`);
 			
 			const contentType = response.headers.get('content-type');
 			if(contentType && contentType.indexOf('application/json') !== -1 ) {
@@ -59,103 +60,84 @@ class DBHelper {
 				return 'API call successfull';
 			}
 		}).then( (data) => {
-			callback(data);
-		}).catch( error => console.error(error));
+			callback(null, data);
+		}).catch( error => callback(error, null));
 
 	};
 
-	// Get's data from the server and puts it into the DB
-	static fetchData(mode, callback) {
-		console.log('FetchMode: ', mode);
+}
 
-		// Check if idb store exists, create otherwise
-		let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
-			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
-		});
+// State Management
+class LocalState {
 
-		let reviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
-			let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
-			reviewStore.createIndex('by-restaurantId', 'restaurant_id');
-		});
-		
-		// Get restaurants from the store
-		if(mode !== 'reviews'){
-			restaurantDbPromise.then( (db) => {
-				let tx = db.transaction('restaurants');
-				let restaurantStore = tx.objectStore('restaurants');
-				return restaurantStore.getAll();
-			}).then( (restaurants) => {
-		
-				// Restaurants found
-				if(restaurants.length > 0) {
-					console.log('IDB: Restaurants retrieved ', restaurants);
-		
-					callback(null, restaurants);
-					
-					if(mode === 'restaurantById' || mode === 'restaurantByCuisineAndNeighborhood') {
-						DBHelper.getAPIData('restaurants', (restaurants) => {
-		
-							let worker = new Worker('js/worker.js');
-							worker.postMessage(restaurants);
-							worker.onmessage = (e) => console.log(e.data);
-			
-						});
-					}
-					
-				} else {
-					console.log('IDB: No restaurants found');
-
-						DBHelper.getAPIData('restaurants', (restaurants) => {
-							
-							callback(null, restaurants);
-			
-							// Put data into IDB
-							restaurantDbPromise.then( db => {
-								let tx = db.transaction('restaurants', 'readwrite');
-								let restaurantStore = tx.objectStore('restaurants');
-			
-								restaurants.forEach( restaurant => {
-									restaurantStore.put(restaurant);
-								});
-			
-								return tx.complete;
-		
-						}).then( () => console.log('IDB: Objects stored'));
-					});
-				} 
-				
-			});
-		}
-
-		if(mode === 'reviews') {
-
-			// Get Reviews from the store
-			reviewDbPromise.then( db => {
-				let tx = db.transaction('reviews');
-				let reviewStore = tx.objectStore('reviews');
-				return reviewStore.getAll();
-			}).then( (reviews) => {
-				DBHelper.getAPIData('reviews', (reviews) => {
-
-					callback(null, reviews);
-
-					// Put Reviews in DB
-					reviewDbPromise.then( db => {
-						let tx = db.transaction('reviews', 'readwrite');
-						let reviewStore = tx.objectStore('reviews');
-
-						reviews.forEach( review => {
-							reviewStore.put(review);
-						});
-
-					});
-
+	// === UTILITY FUNCTIONS ===
+	// Creates or returns IndexedDB stores
+	static setupIDBStores(store) {
+		switch(store) {
+			case 'restaurants':
+				let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
+					let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'}); // Value: Key
 				});
+				return restaurantDbPromise;
+			case 'reviews':
+				let reviewDbPromise = idb.open('reviews', 1, (upgradeDB) => {
+					let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
+					reviewStore.createIndex('by-restaurantId', 'restaurant_id');
+				});
+				return reviewDbPromise;
+		}
+	}
+
+	// Return data from the IDB Store
+	static retrieveDataFromIDB(dbPromise, storeKey, callback) {
+
+		dbPromise.then( (db) => {
+			let tx = db.transaction(storeKey);
+			let store = tx.objectStore(storeKey);
+			return store.getAll();
+		}).then(data => callback(null, data));
+	}
+
+	static checkforIDBData(api, data, callback) {
+
+		// Data in IDB: Send to front-end, fetch from API, compare & update
+		if(data.length > 0) {
+			console.log(`IDB: ${api.name} retrieved: ${data}`);
+
+			callback(null, data);
+
+			APIService.fetchApiData(api, (error, data) => {
+				let worker = new Worker('js/worker.js');
+				worker.postMessage(data);
+				worker.onmessage = (e) => console.log(e.data);
+			});
+		
+		// Data not in IDB: Fetch from API, send to front-end, store in IDB
+		} else {
+			console.log(`IDB: No ${api.name} found`);
+
+			APIService.fetchApiData(api, (error, data) => {
+
+				callback(null, data);
+
+				LocalState.setupIDBStores(api.name).then( db => {
+					let tx = db.transaction(api.name, 'readwrite');
+					let store = tx.objectStore(api.name);
+
+					data.forEach( object => {
+						store.put(object);
+					});
+
+					return tx.complete;
+				}).then( () => console.log(`IDB: ${data} stored`));
 			});
 		}
-		
-	};
+	}
 
+}
+
+// Database Helper Functions
+class DBHelper {
 
 	// Fetch restaurant by ID
 	static fetchRestaurantById(id, callback) {
@@ -293,6 +275,8 @@ class DBHelper {
 
 	}
 
+
+
 	// Restaurant page URL
 	static urlForRestaurant(restaurant) {
 		return `./restaurant.html?id=${restaurant.id}`;
@@ -314,6 +298,8 @@ class DBHelper {
 		});
 		return marker;
 	}
+
+
 
 	// Toggles favorite mode
 	static toggleFavorite(mode, id) {
@@ -369,6 +355,7 @@ class DBHelper {
 	}
 }
 
+// For sending Form offline
 window.addEventListener('offline', (event) => {
 	console.log('Browser: Offline now!');
 });

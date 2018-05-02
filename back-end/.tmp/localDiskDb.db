@@ -531,6 +531,24 @@
         "createdAt": "2018-04-30T20:38:06.036Z",
         "updatedAt": "2018-04-30T20:38:06.036Z",
         "id": 48
+      },
+      {
+        "restaurant_id": 1,
+        "name": "asdfsadf",
+        "rating": 2,
+        "comments": "asdf",
+        "createdAt": "2018-05-02T19:39:09.724Z",
+        "updatedAt": "2018-05-02T19:39:09.724Z",
+        "id": 49
+      },
+      {
+        "restaurant_id": 1,
+        "name": "Juri",
+        "rating": 3,
+        "comments": "Review!",
+        "createdAt": "2018-05-02T19:48:56.232Z",
+        "updatedAt": "2018-05-02T19:48:56.232Z",
+        "id": 50
       }
     ]
   },
@@ -586,7 +604,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 48
+      "id": 50
     }
   }
 }
