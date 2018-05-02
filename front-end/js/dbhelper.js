@@ -349,13 +349,44 @@ class DBHelper {
 
 	static addReview(review, callback) {
 
+		callback();
+
 		if(!navigator.onLine){
-			//store locally
+			// store locally
+			localStorage.setItem('review', review);
+			console.log('Local Storage: Review stored');
+
+			// send request when online again document.body event "online" & "offline"
+
+			// document.body.ononline or document.body.onoffline
+			// delete from local storage if request succesful
 		} else {
-			DBHelper.getAPIData('addReview', (data)=> callback(data), null, review);
+			DBHelper.getAPIData('addReview', (data) => console.log(data), null, review);
 			console.log('data sent to api');
 		}
 
 
 	}
 }
+
+window.addEventListener('offline', (event) => {
+	console.log('Browser: Offline now!');
+});
+
+window.addEventListener('online', (event) => {
+
+	let review = localStorage.getItem('review');
+
+	if(review !== null) {
+
+		review = review.split(',');
+		console.log(review);
+
+		DBHelper.getAPIData('addReview', (data) => console.log(data), null, review);
+		console.log('data sent to api');
+
+		localStorage.removeItem('review');
+		console.log('Local Storage: Review removed')
+	}
+	console.log('Browser: Online again!');
+});

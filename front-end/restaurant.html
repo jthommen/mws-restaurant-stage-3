@@ -64,7 +64,7 @@
       <div class="modal-body">
         <form id="review-form">
         <label for="name">Author:</label></br>
-        <input id="review-author" name="name" type="text"/>
+        <input id="review-author" name="name" type="text" value="Juri"/>
 
         <div class="rating-container">
           <p>Rating:</p>
@@ -75,7 +75,7 @@
               <input name="rating" id="review-rating4" type="radio" value="4" />
               <label for="rating4" title="4 stars">☆</label>
 
-              <input name="rating" id="review-rating3" type="radio" value="3" />
+              <input name="rating" id="review-rating3" type="radio" value="3" checked="checked"/>
               <label for="rating3" title="3 stars">☆</label>
 
               <input name="rating" id="review-rating2" type="radio" value="2" />
@@ -86,7 +86,7 @@
           </div>
         </div>
         <label for="comments">Comments:</label></br>
-        <textarea id="review-comments" name="comments"></textarea></br>
+        <textarea id="review-comments" name="comments">Review!</textarea></br>
         <div id="form-error"></div>
         <button class="submit-button" onclick="addReview()">Add Review</button>
       </form>

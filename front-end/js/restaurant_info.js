@@ -196,8 +196,17 @@ createReviewHTML = (review) => {
 let modal = document.getElementById('add-review-modal');
 let closeBtn = document.getElementsByClassName('close')[0];
 
+// Close on pressing ESC
+window.addEventListener('keyup', (event) => {
+	if (event.keyCode == 27) {
+		modal.style.display = 'none';
+	} 
+});
+
+// Close on Close Button
 closeBtn.onclick = () => modal.style.display = "none";
 
+// Close on clicking outside modal
 window.onclick = (event) => {
 	if(event.target == modal) {
 		modal.style.display = 'none';
