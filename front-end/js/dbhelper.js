@@ -98,6 +98,7 @@ class LocalState {
 		}).then(data => callback(null, data));
 	}
 
+	// Check for Data in IDB, serve, fetch and update
 	static checkforIDBData(api, data, callback) {
 
 		// Data in IDB: Send to front-end, fetch from API, compare & update
@@ -132,6 +133,55 @@ class LocalState {
 				}).then( () => console.log(`IDB: ${data} stored`));
 			});
 		}
+	}
+
+	// === Getter FUNCTIONS ===
+
+	// TODO: Rewrite Getter functions
+	static getRestaurantById(id, callback) {
+
+	}
+
+	static getRestaurantByCuisine(cuisine, callback) {
+
+	}
+
+	static  getRestaurantByNeighborhood(neighborhood, callback) {
+
+	}
+
+	static getRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, callback) {
+
+	}
+
+	static gethNeighborhoods(callback) {
+
+	}
+
+	static getCuisines(callback) {
+
+	}
+
+	static getReviewsByRestaurant(restaurantId, callback) {
+	}
+
+	static getUrlForRestaurant(restaurant) {
+
+	}
+
+	static getImageUrlForRestaurant(restaurant) {
+
+	}
+
+	static getMapMarkerForRestaurant(restaurant, map) {
+
+	}
+
+	static toggleFavorite(mode, id) {
+	}
+
+	static sendFormWhenOnline(){
+		
 	}
 
 }
