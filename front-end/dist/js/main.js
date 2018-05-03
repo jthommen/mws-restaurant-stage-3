@@ -21,7 +21,7 @@ registerServiceWorker = () => {
 
 // Fetch neighborhoods and set their HTML
 fetchNeighborhoods = () => {
-	DBHelper.fetchNeighborhoods((error, neighborhoods) => {
+	LocalState.getNeighborhoods((error, neighborhoods) => {
 		if (error) {
 			// Got an error
 			console.error(error);
@@ -45,7 +45,7 @@ fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
 
 // Fetch suieines and set their HTML
 fetchCuisines = () => {
-	DBHelper.fetchCuisines((error, cuisines) => {
+	LocalState.getCuisines((error, cuisines) => {
 		if (error) {
 			// Got an error!
 			console.error(error);
@@ -93,7 +93,7 @@ updateRestaurants = () => {
 	const cuisine = cSelect[cIndex].value;
 	const neighborhood = nSelect[nIndex].value;
 
-	DBHelper.fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, (error, restaurants) => {
+	LocalState.getRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, (error, restaurants) => {
 		if (error) {
 			// Got an error!
 			console.error(error);
@@ -150,9 +150,11 @@ createRestaurantHTML = restaurant => {
 	image.setAttribute('src', placeholder_img);
 
 	// Check if image exists
-	var regex = /undefined/;
-	if (!regex.test(DBHelper.imageUrlForRestaurant(restaurant))) {
-		image.setAttribute('data-src', DBHelper.imageUrlForRestaurant(restaurant));
+	const imageUrl = LocalState.getImageUrlForRestaurant(restaurant);
+	const regex = /undefined/;
+
+	if (!regex.test(imageUrl)) {
+		image.setAttribute('data-src', imageUrl);
 	} else {
 		image.setAttribute('data-src', '/img/icons/icon-placeholder.png');
 		console.log('Image undefined!');
@@ -175,7 +177,7 @@ createRestaurantHTML = restaurant => {
 
 	const more = document.createElement('a');
 	more.innerHTML = 'View Details';
-	more.href = DBHelper.urlForRestaurant(restaurant);
+	more.href = LocalState.getUrlForRestaurant(restaurant);
 	li.append(more);
 
 	// Toggle favorize icon
@@ -195,11 +197,11 @@ createRestaurantHTML = restaurant => {
 		if (this.classList.contains('favorized')) {
 			this.src = '/img/icons/favorite.svg';
 			this.classList.remove('favorized');
-			DBHelper.toggleFavorite(false, this.id);
+			LocalState.toggleFavorite(false, this.id);
 		} else {
 			this.src = '/img/icons/favorized.svg';
 			this.classList.add('favorized');
-			DBHelper.toggleFavorite(true, this.id);
+			LocalState.toggleFavorite(true, this.id);
 		}
 		console.log('Favorize toggled, mode is: ', this.classList.contains('favorized'));
 	};
@@ -213,7 +215,7 @@ createRestaurantHTML = restaurant => {
 addMarkersToMap = (restaurants = self.restaurants) => {
 	restaurants.forEach(restaurant => {
 		// Add marker to the map
-		const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
+		const marker = LocalState.getMapMarkerForRestaurant(restaurant, self.map);
 		google.maps.event.addListener(marker, 'click', () => {
 			window.location.href = marker.url;
 		});

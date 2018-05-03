@@ -93,29 +93,24 @@ class LocalState {
 		}
 	}
 
-	// Return data from the IDB Store
-	static retrieveDataFromIDB(dbPromise, storeKey, callback) {
-
-		dbPromise.then( (db) => {
-			let tx = db.transaction(storeKey);
-			let store = tx.objectStore(storeKey);
-			return store.getAll();
-		}).then(data => callback(data));
-	}
-
 	// Check for Data in IDB, serve, fetch and update
 	static checkforIDBData(api, callback) {
 
-		LocalState.setupIDBStores(api.object_type)
-		.then((dbPromise) => LocalState.retrieveDataFromIDB(dbPromise, api.object_type, (data) => {return data}))
-		.then( data => {
+		const dbPromise = LocalState.setupIDBStores(api.object_type)
+		
+		dbPromise.then( db => {
+			let tx = db.transaction(api.object_type);
+			let store = tx.objectStore(api.object_type);
+			return store.getAll();
+		}).then( data => {
+
 			// Data in IDB: Send to front-end, fetch from API, compare & update
 			if(data.length > 0) {
-				console.log(`IDB: ${api.name} retrieved: ${data}`);
+				console.log(`IDB: ${api.name} retrieved:`, data);
 
 				callback(null, data);
 
-				APIService.fetchApiData(api, (error, data) => {
+				ApiService.fetchApiData(api, (error, data) => {
 					let worker = new Worker('js/worker.js');
 
 					let workerData = {
@@ -131,13 +126,13 @@ class LocalState {
 			} else {
 				console.log(`IDB: No ${api.name} found`);
 
-				APIService.fetchApiData(api, (error, data) => {
+				ApiService.fetchApiData(api, (error, data) => {
 
 					callback(null, data);
 
-					LocalState.setupIDBStores(api.name).then( db => {
-						let tx = db.transaction(api.name, 'readwrite');
-						let store = tx.objectStore(api.name);
+					LocalState.setupIDBStores(api.object_type).then( db => {
+						let tx = db.transaction(api.object_type, 'readwrite');
+						let store = tx.objectStore(api.object_type);
 
 						data.forEach( object => {
 							store.put(object);
@@ -157,15 +152,15 @@ class LocalState {
 		let dbPromise = LocalState.setupIDBStores(api.object_type);
 
 		dbPromise.then( db => {
-			let tx = db.transaction(api.name);
-			let store = tx.objectStore(api.name);
+			let tx = db.transaction(api.object_type);
+			let store = tx.objectStore(api.object_type);
 			return store.get(api.object_id);
 		}).then( object => {
 			object.is_favorite = api.data;
 			 
 			dbPromise.then( db => {
-				let tx = db.transaction(api.name, 'readwrite');
-				let store = tx.objectStore(api.name);
+				let tx = db.transaction(api.object_type, 'readwrite');
+				let store = tx.objectStore(api.object_type);
 				store.put(object);
 				return;
 			}).then( () => callback(null, `IDB: ${object.name} favorized!`));
@@ -202,7 +197,6 @@ class LocalState {
 	}
 
 	// === Getter FUNCTIONS ===
-
 	static getRestaurantById(id, callback) {
 		let api = {
 			name: 'restaurantById',
@@ -271,11 +265,11 @@ class LocalState {
 				let filteredRestaurants = restaurants;
 
 				if(cuisine !== 'all') {
-					filteredRestaurant = filteredRestaurant.filter(r => r.cuisine_type == cuisine_type); 
+					filteredRestaurants = filteredRestaurants.filter(r => r.cuisine_type === cuisine); 
 				}
 
 				if(neighborhood != 'all') {
-					filteredRestaurants = filteredRestaurants.filter(r => r.neighborhood == neighborhood);
+					filteredRestaurants = filteredRestaurants.filter(r => r.neighborhood === neighborhood);
 				}
 				
 				callback(null, filteredRestaurants);
@@ -366,7 +360,7 @@ class LocalState {
 		const marker = new google.maps.Marker({
 			position: restaurant.latlng,
 			title: restaurant.name,
-			url: DBHelper.urlForRestaurant(restaurant),
+			url: LocalState.getUrlForRestaurant(restaurant),
 			map: map,
 			animation: google.maps.Animation.DROP
 		});
@@ -379,7 +373,7 @@ class LocalState {
 
 		let api = {
 			name: 'favorize',
-			object_type: 'restaurant',
+			object_type: 'restaurants',
 			object_id: restaurantId,
 			data: mode
 		};
@@ -388,7 +382,7 @@ class LocalState {
 			error ? console.log(error): console.log(data);
 		});
 		
-		APIService.fetchApiData(api, (error, data) => {
+		ApiService.fetchApiData(api, (error, data) => {
 			error ? console.log(error): console.log(data);
 		});
 
@@ -402,7 +396,7 @@ class LocalState {
 		};
 
 		// Send to LocalState for update
-		APIService.fetchApiData(api, (error, data) => {
+		ApiService.fetchApiData(api, (error, data) => {
 			error ? console.log(error) : console.log(data);
 		});
 

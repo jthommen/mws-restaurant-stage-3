@@ -15,7 +15,7 @@ window.initMap = () => {
 				scrollwheel: false
 			});
 			fillBreadcrumb();
-			DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+			LocalState.getMapMarkerForRestaurant(self.restaurant, self.map);
 		}
 	});
 };
@@ -33,7 +33,7 @@ fetchRestaurantFromURL = (callback) => {
 		error = 'No restaurant id in URL';
 		callback(error, null);
 	} else {
-		DBHelper.fetchRestaurantById(id, (error, restaurant) => {
+		LocalState.getRestaurantById(id, (error, restaurant) => {
 			self.restaurant = restaurant;
 			if (!restaurant) {
 				console.error(error);
@@ -61,9 +61,11 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 	image.setAttribute('alt', `Restaurant ${restaurant.name}`);
 
 	// Check if image exists
-	var regex = /undefined/;
-	if(!regex.test(DBHelper.imageUrlForRestaurant(restaurant))) {
-		image.src = DBHelper.imageUrlForRestaurant(restaurant);
+	const imageUrl = LocalState.getImageUrlForRestaurant(restaurant);
+	const regex = /undefined/;
+
+	if(!regex.test(imageUrl)) {
+		image.src = imageUrl;
 	} else {
 		image.src = '/img/icons/icon-placeholder.png';
 		console.log('Image undefined!');
@@ -82,7 +84,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 };
 
 fetchReviews = () => {
-	DBHelper.getReviewsByRestaurant(self.restaurant.id, (error, reviews) => {
+	LocalState.getReviewsByRestaurant(self.restaurant.id, (error, reviews) => {
 		self.restaurant.reviews = reviews;
 		fillReviewsHTML();
 	});

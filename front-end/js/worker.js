@@ -18,7 +18,7 @@ onmessage = (e) => {
         // TODO: Use web worker to do this.                
         objects.forEach( object => {
             store.get(object.id).then( idbObject => {
-                if(JSON.stringify(restaurant) !== JSON.stringify(idbObject)) {
+                if(JSON.stringify(object) !== JSON.stringify(idbObject)) {
                     store.put(object)
                         .then( (object) => console.log(`Worker IDB: ${api} updated`));
                 }
