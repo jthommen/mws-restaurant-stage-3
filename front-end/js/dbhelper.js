@@ -178,19 +178,20 @@ class LocalState {
 
 	static sendDataWhenOnline(api) {
 
-		localStorage.setItem('data', api);
-			console.log(`Local Storage: ${api.object_type} stored`);
+		console.log(api);
+
+		localStorage.setItem('data', JSON.stringify(api.data));
+		console.log(`Local Storage: ${api.object_type} stored`);
 		
 		window.addEventListener('online', (event) => {
 
-			let data = localStorage.getItem(data);
-		
+			let data = JSON.parse(localStorage.getItem('data'));
+
 			if(data !== null) {
 		
-				data = data.split(',');
 				console.log(data);
 		
-				ApiService.getAPIData(api, (error, data) => {
+				ApiService.fetchApiData(api, (error, data) => {
 					error ? console.log(error) : console.log(data);
 				});
 				
@@ -399,12 +400,13 @@ class LocalState {
 
 		let api = {
 			name: 'addReview',
-			data: review
+			data: review,
+			object_type: 'review'
 		};
 
 		// Send to LocalState for update
 		ApiService.fetchApiData(api, (error, data) => {
-			error ? console.log(error) : console.log(`Server: ${data.name} updated`);
+			error ? console.log(error) : console.log(`Server: Review uploaded`);
 		});
 
 	}

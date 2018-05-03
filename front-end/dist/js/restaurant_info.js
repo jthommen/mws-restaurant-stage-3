@@ -151,7 +151,6 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 };
 
 addReviewHTML = review => {
-	console.log(review);
 	const ListContainer = document.getElementById('reviews-list');
 
 	ListContainer.prepend(createReviewHTML(review));
