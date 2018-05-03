@@ -2,10 +2,10 @@ importScripts('idb.js');
 
 onmessage = (e) => {
 
-    console.log('Worker IDB: Checking for changes');
-
     let objects = e.data.objects;
     let api = e.data.api
+
+    console.log(`Worker IDB: Checking for changes in ${api}`);
 
     let dbPromise = idb.open(api, 1, (upgradeDB) => {
         let restaurantStore = upgradeDB.createObjectStore(api, {keyPath: 'id'}); // Value: Key

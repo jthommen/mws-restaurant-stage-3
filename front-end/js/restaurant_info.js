@@ -148,6 +148,13 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	container.appendChild(ListContainer);
 };
 
+addReviewHTML = (review) => {
+	console.log(review);
+	const ListContainer = document.getElementById('reviews-list');
+	
+	ListContainer.prepend(createReviewHTML(review));
+};
+
 /**
  * Create review HTML and add it to the webpage.
  */
@@ -248,10 +255,20 @@ addReview = () => {
 		errorContainer.innerHTML = '';
 		const review = [name, rating, comments, restaurantId];
 
-		DBHelper.addReview(review, () => DBHelper.getReviewsByRestaurant(restaurantId, (error, reviews) => {
-			self.restaurant.reviews = reviews;
-			fillReviewsHTML();
-		}));
+		// Send review to backend
+		LocalState.addReview(review);
+
+		// Add data to DOM
+		const frontEndReview = {
+			restaurant_id: parseInt(review[3]),
+			rating: parseInt(review[1]),
+			name: review[0],
+			comments: review[2],
+			createdAt: new Date(),
+			updatedAt: new Date()
+		};
+
+		addReviewHTML(frontEndReview);
 		
 		document.getElementById('review-form').reset();
 		modal.style.display = 'none';

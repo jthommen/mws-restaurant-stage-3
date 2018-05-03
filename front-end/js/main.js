@@ -6,18 +6,29 @@ var markers = [];
 
 // Register service worker and fetch neighborhoods & cuisines
 document.addEventListener('DOMContentLoaded', (event) => {
-	registerServiceWorker();
-	fetchNeighborhoods();
-	fetchCuisines();
+
+	let api = {
+		name: 'restaurants',
+		object_type: 'restaurants'
+	};
+
+
+	LocalState.checkforIDBData(api, (error, data) => {
+		console.log('Initial Load finished!');
+		fetchNeighborhoods();
+		fetchCuisines();
+		registerServiceWorker();
+	});
+
 });
 
 // Register service worker
 registerServiceWorker = () => {
 	if(!navigator.serviceWorker) return;
 	navigator.serviceWorker.register('./service-worker.js').then( () => {
-		console.log('ServiceWorker registered!');
+		console.log('Service Worker: Registered!');
 	}).catch( (err) => {
-		console.log(`Registration failed: ${err}`);
+		console.log(`Service Worker: Registration failed: ${err}`);
 	});
 };
 
@@ -181,6 +192,7 @@ createRestaurantHTML = (restaurant) => {
 
 	// Toggle favorize icon
 	const favorize = document.createElement('img');
+	favorize.setAttribute('alt', 'Heart');
 	favorize.classList.add('favorize');
 	favorize.id = restaurant.id;
 
@@ -202,7 +214,6 @@ createRestaurantHTML = (restaurant) => {
 			this.classList.add('favorized');
 			LocalState.toggleFavorite(true, this.id);
 		}
-		console.log('Favorize toggled, mode is: ', this.classList.contains('favorized') );
 	};
 
 	li.append(favorize);

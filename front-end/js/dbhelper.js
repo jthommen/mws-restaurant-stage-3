@@ -56,7 +56,7 @@ class ApiService {
 		}
 
 		fetch(api_url,fetch_options).then( (response) => {
-			console.log(`Server: ${api.name} Called`);
+			console.log(`Server: ${api.name} api called`);
 			
 			const contentType = response.headers.get('content-type');
 			if(contentType && contentType.indexOf('application/json') !== -1 ) {
@@ -110,25 +110,30 @@ class LocalState {
 
 				callback(null, data);
 
-				ApiService.fetchApiData(api, (error, data) => {
-					let worker = new Worker('js/worker.js');
+				let dataRefreshed = localStorage.getItem('dataRefreshed');
 
-					let workerData = {
-						api: api.name,
-						objects: data
-					};
+				if(!dataRefreshed || (dataRefreshed - new Date()) / 1000 > 300  ) {
+					
+					localStorage.setItem('dataRefreshed', new Date());
 
-					worker.postMessage(workerData);
-					worker.onmessage = (e) => console.log(e.data);
-				});
+					ApiService.fetchApiData(api, (error, data) => {
+						let worker = new Worker('js/worker.js');
+
+						let workerData = {
+							api: api.name,
+							objects: data
+						};
+
+						worker.postMessage(workerData);
+						worker.onmessage = (e) => console.log(e.data);
+					});
+				}
 			
 			// Data not in IDB: Fetch from API, send to front-end, store in IDB
 			} else {
 				console.log(`IDB: No ${api.name} found`);
 
 				ApiService.fetchApiData(api, (error, data) => {
-
-					callback(null, data);
 
 					LocalState.setupIDBStores(api.object_type).then( db => {
 						let tx = db.transaction(api.object_type, 'readwrite');
@@ -138,8 +143,10 @@ class LocalState {
 							store.put(object);
 						});
 
-						return tx.complete;
-					}).then( () => console.log(`IDB: ${data} stored`));
+						console.log('IDB: Data stored: ', data)
+
+						return data;
+					}).then( (data) => callback(null, data));
 				});
 			}
 		});
@@ -379,16 +386,16 @@ class LocalState {
 		};
 
 		LocalState.updateIDBData(api, (error, data) => {
-			error ? console.log(error): console.log(data);
+			if(error) console.log(error);
 		});
 		
 		ApiService.fetchApiData(api, (error, data) => {
-			error ? console.log(error): console.log(data);
+			error ? console.log(error): console.log(`Server: ${data.name} updated`);
 		});
 
 	}
 
-	static addReview(review, callback) {
+	static addReview(review) {
 
 		let api = {
 			name: 'addReview',
@@ -397,7 +404,7 @@ class LocalState {
 
 		// Send to LocalState for update
 		ApiService.fetchApiData(api, (error, data) => {
-			error ? console.log(error) : console.log(data);
+			error ? console.log(error) : console.log(`Server: ${data.name} updated`);
 		});
 
 	}
