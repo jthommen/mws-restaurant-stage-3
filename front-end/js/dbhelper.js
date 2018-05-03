@@ -3,6 +3,12 @@ class ApiService {
 
 	static fetchApiData(api, callback){
 
+		// Check if online
+		if(!navigator.onLine && (api.name === 'favorize' || api.name === 'addReview')) {
+			LocalState.sendDataWhenOnline(api);
+			return;
+		}
+
 		const port = 1337;
 		let api_url;
 		let fetch_options;
@@ -13,26 +19,25 @@ class ApiService {
 				fetch_options = {method: 'GET'};
 				break;
 			case 'restaurantById':
-				api_url = `http://localhost:${port}/restaurants/restaurant_id=${api.id}`;
+				api_url = `http://localhost:${port}/restaurants/${api.object_id}`;
 				fetch_options = {method: 'GET'};
 			case 'reviews':
 				api_url = `http://localhost:${port}/reviews`;
 				fetch_options = {method: 'GET'};
 				break;
 			case 'reviewById':
-				api_url = `http://localhost:${port}/reviews/?restaurant_id=${api.id}`;
+				api_url = `http://localhost:${port}/reviews/?restaurant_id=${api.object_id}`;
 				fetch_options = {method: 'GET'};
 				break;
 			case 'addReview':
 				api_url = `http://localhost:${port}/reviews`;
 				
-				let review = api.data; 
-				// {
-				// 	"restaurant_id": parseInt(param[3]),
-				// 	"name": param[0],
-				// 	"rating": parseInt(param[1]),
-				// 	"comments": param[2]
-				// };
+				let review = {
+					"name": api.data[0],
+					"rating": parseInt(api.data[1]),
+					"comments": api.data[2],
+					"restaurant_id": parseInt(api.data[3])
+				};
 
 				fetch_options = {
 					method: 'POST',
@@ -43,7 +48,7 @@ class ApiService {
 				};
 				break;
 			case 'favorize':
-				api_url = `http://localhost:${port}/restaurants/${api.id}/?is_favorite=${api.data}`;
+				api_url = `http://localhost:${port}/restaurants/${api.object_id}/?is_favorite=${api.data}`;
 				fetch_options = {method: 'PUT'};
 				break;
 			default:
@@ -95,209 +100,226 @@ class LocalState {
 			let tx = db.transaction(storeKey);
 			let store = tx.objectStore(storeKey);
 			return store.getAll();
-		}).then(data => callback(null, data));
+		}).then(data => callback(data));
 	}
 
 	// Check for Data in IDB, serve, fetch and update
-	static checkforIDBData(api, data, callback) {
+	static checkforIDBData(api, callback) {
 
-		// Data in IDB: Send to front-end, fetch from API, compare & update
-		if(data.length > 0) {
-			console.log(`IDB: ${api.name} retrieved: ${data}`);
-
-			callback(null, data);
-
-			APIService.fetchApiData(api, (error, data) => {
-				let worker = new Worker('js/worker.js');
-				worker.postMessage(data);
-				worker.onmessage = (e) => console.log(e.data);
-			});
-		
-		// Data not in IDB: Fetch from API, send to front-end, store in IDB
-		} else {
-			console.log(`IDB: No ${api.name} found`);
-
-			APIService.fetchApiData(api, (error, data) => {
+		LocalState.setupIDBStores(api.object_type)
+		.then((dbPromise) => LocalState.retrieveDataFromIDB(dbPromise, api.object_type, (data) => {return data}))
+		.then( data => {
+			// Data in IDB: Send to front-end, fetch from API, compare & update
+			if(data.length > 0) {
+				console.log(`IDB: ${api.name} retrieved: ${data}`);
 
 				callback(null, data);
 
-				LocalState.setupIDBStores(api.name).then( db => {
-					let tx = db.transaction(api.name, 'readwrite');
-					let store = tx.objectStore(api.name);
+				APIService.fetchApiData(api, (error, data) => {
+					let worker = new Worker('js/worker.js');
 
-					data.forEach( object => {
-						store.put(object);
-					});
+					let workerData = {
+						api: api.name,
+						objects: data
+					};
 
-					return tx.complete;
-				}).then( () => console.log(`IDB: ${data} stored`));
-			});
-		}
+					worker.postMessage(workerData);
+					worker.onmessage = (e) => console.log(e.data);
+				});
+			
+			// Data not in IDB: Fetch from API, send to front-end, store in IDB
+			} else {
+				console.log(`IDB: No ${api.name} found`);
+
+				APIService.fetchApiData(api, (error, data) => {
+
+					callback(null, data);
+
+					LocalState.setupIDBStores(api.name).then( db => {
+						let tx = db.transaction(api.name, 'readwrite');
+						let store = tx.objectStore(api.name);
+
+						data.forEach( object => {
+							store.put(object);
+						});
+
+						return tx.complete;
+					}).then( () => console.log(`IDB: ${data} stored`));
+				});
+			}
+		});
+
+	}
+
+	// Update IDB with front-end user input data
+	static updateIDBData(api, callback) {
+
+		let dbPromise = LocalState.setupIDBStores(api.object_type);
+
+		dbPromise.then( db => {
+			let tx = db.transaction(api.name);
+			let store = tx.objectStore(api.name);
+			return store.get(api.object_id);
+		}).then( object => {
+			object.is_favorite = api.data;
+			 
+			dbPromise.then( db => {
+				let tx = db.transaction(api.name, 'readwrite');
+				let store = tx.objectStore(api.name);
+				store.put(object);
+				return;
+			}).then( () => callback(null, `IDB: ${object.name} favorized!`));
+
+		});
+
+	}
+
+	static sendDataWhenOnline(api) {
+
+		localStorage.setItem('data', api);
+			console.log(`Local Storage: ${api.object_type} stored`);
+		
+		window.addEventListener('online', (event) => {
+
+			let data = localStorage.getItem(data);
+		
+			if(data !== null) {
+		
+				data = data.split(',');
+				console.log(data);
+		
+				ApiService.getAPIData(api, (error, data) => {
+					error ? console.log(error) : console.log(data);
+				});
+				
+				console.log('LocalState: data sent to api');
+		
+				localStorage.removeItem('data');
+				console.log(`Local Storage: ${api.object_type} removed`)
+			}
+			console.log('Browser: Online again!');
+		});
 	}
 
 	// === Getter FUNCTIONS ===
 
-	// TODO: Rewrite Getter functions
 	static getRestaurantById(id, callback) {
+		let api = {
+			name: 'restaurantById',
+			object_type: 'restaurants',
+			object_id: id
+		};
 
+		LocalState.checkforIDBData(api, (error, restaurants) => {
+			
+			if (error) callback(error, null);
+			
+			else {
+				const restaurant = restaurants.find( r => r.id == id);
+				!restaurant ? callback('Restaurant does not exist', null): callback(null, restaurant);
+			}
+		});
 	}
 
 	static getRestaurantByCuisine(cuisine, callback) {
 
+		let api = {
+			name: 'restaurants',
+			object_type: 'restaurants'
+		};
+
+		LocalState.checkforIDBData(api, (error, restaurants) => {
+
+			if(error) callback(error, null);
+
+			else {
+				const cuisines = restaurants.filter(r => r.cuisine_type == cuisine);
+				callback(null, cuisines);
+			}
+		});
+
 	}
 
-	static  getRestaurantByNeighborhood(neighborhood, callback) {
+	static getRestaurantByNeighborhood(neighborhood, callback) {
+		let api = {
+			name: 'restaurants',
+			object_type: 'restaurants'
+		};
 
+		LocalState.checkforIDBData(api, (error, restaurants) => {
+			
+			if(error) callback(error, null);
+			
+			else {
+				const neighborhoods = restaurants.filter(r => r.neighborhood == neighborhood);
+				callback(null, neighborhoods);
+			}
+
+		});
 	}
 
 	static getRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, callback) {
+		let api = {
+			name: 'restaurants',
+			object_type: 'restaurants'
+		};
 
+		LocalState.checkforIDBData(api, (error, restaurants) =>{
+			if(error) callback(error, null);
+
+			else {
+				let filteredRestaurants = restaurants;
+
+				if(cuisine !== 'all') {
+					filteredRestaurant = filteredRestaurant.filter(r => r.cuisine_type == cuisine_type); 
+				}
+
+				if(neighborhood != 'all') {
+					filteredRestaurants = filteredRestaurants.filter(r => r.neighborhood == neighborhood);
+				}
+				
+				callback(null, filteredRestaurants);
+			}
+
+		});
 	}
 
-	static gethNeighborhoods(callback) {
+	static getNeighborhoods(callback) {
 
+		let api = {
+			name: 'restaurants',
+			object_type: 'restaurants'
+		};
+
+		LocalState.checkforIDBData(api, (error, restaurants) => {
+			if(error) callback(error, null);
+
+			else {
+	
+			// Get all neighborhoods from all restaurants
+			const neighborhoods = restaurants.map(
+				(v, i) => restaurants[i].neighborhood
+			);
+
+			// Remove duplicates from neighborhoods
+			const uniqueNeighborhoods = neighborhoods.filter(
+				(v, i) => neighborhoods.indexOf(v) == i
+			);
+
+			callback(null, uniqueNeighborhoods);
+			}
+			
+		});
 	}
 
 	static getCuisines(callback) {
 
-	}
+		let api = {
+			name: 'restaurants',
+			object_type: 'restaurants'
+		};
 
-	static getReviewsByRestaurant(restaurantId, callback) {
-	}
-
-	static getUrlForRestaurant(restaurant) {
-
-	}
-
-	static getImageUrlForRestaurant(restaurant) {
-
-	}
-
-	static getMapMarkerForRestaurant(restaurant, map) {
-
-	}
-
-	static toggleFavorite(mode, id) {
-	}
-
-	static sendFormWhenOnline(){
-		
-	}
-
-}
-
-// Database Helper Functions
-class DBHelper {
-
-	// Fetch restaurant by ID
-	static fetchRestaurantById(id, callback) {
-
-		// fetch all restaurants with proper error handling.
-		DBHelper.fetchData('restaurantById', (error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				const restaurant = restaurants.find(r => r.id == id);
-				if (restaurant) {
-
-					// Got the restaurant
-					callback(null, restaurant);
-				} else {
-
-					// Restaurant does not exist in the database
-					callback('Restaurant does not exist', null);
-				}
-			}
-		});
-	}
-
-	// Fetch restaurant by cuisine type
-	static fetchRestaurantByCuisine(cuisine, callback) {
-
-		// Fetch all restaurants  with proper error handling
-		DBHelper.fetchData('RestaurantByCuisines', (error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				// Filter restaurants to have only given cuisine type
-				const results = restaurants.filter(r => r.cuisine_type == cuisine);
-				callback(null, results);
-			}
-		});
-	}
-
-	// Fetch restaurant by neighhborhood with proper error handling
-	static fetchRestaurantByNeighborhood(neighborhood, callback) {
-
-		// Fetch all restaurants
-		DBHelper.fetchData('restaurantByNeighborhood', (error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-
-				// Filter restaurants to have only given neighborhood
-				const results = restaurants.filter(r => r.neighborhood == neighborhood);
-				callback(null, results);
-			}
-		});
-	}
-
-	// Fetch restaurants by a cuisine and a neighborhood with proper error handling
-	static fetchRestaurantByCuisineAndNeighborhood(
-		cuisine,
-		neighborhood,
-		callback
-	) {
-
-		// Fetch all restaurants
-		DBHelper.fetchData('restaurantByCuisineAndNeighborhood',(error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				let results = restaurants;
-				if (cuisine != 'all') {
-
-					// filter by cuisine
-					results = results.filter(r => r.cuisine_type == cuisine);
-				}
-				if (neighborhood != 'all') {
-
-					// filter by neighborhood
-					results = results.filter(r => r.neighborhood == neighborhood);
-				}
-				callback(null, results);
-			}
-		});
-	}
-
-	// Fetch all neighborhoods with proper error handling
-	static fetchNeighborhoods(callback) {
-
-		// Fetch all restaurants
-		DBHelper.fetchData('neighborhoods',(error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-
-				// Get all neighborhoods from all restaurants
-				const neighborhoods = restaurants.map(
-					(v, i) => restaurants[i].neighborhood
-				);
-
-				// Remove duplicates from neighborhoods
-				const uniqueNeighborhoods = neighborhoods.filter(
-					(v, i) => neighborhoods.indexOf(v) == i
-				);
-				callback(null, uniqueNeighborhoods);
-			}
-		});
-	}
-
-	// Fetch all cuisines with proper error handling
-	static fetchCuisines(callback) {
-
-		// Fetch all restaurants
-		DBHelper.fetchData('cuisines',(error, restaurants) => {
+		LocalState.checkforIDBData(api, (error, restaurants) => {
 			if (error) {
 				callback(error, null);
 			} else {
@@ -315,30 +337,32 @@ class DBHelper {
 	}
 
 	static getReviewsByRestaurant(restaurantId, callback) {
-		DBHelper.getAPIData('reviewById', (reviews) => {
-				console.log(reviews);
-				// console.log('Unfiltred: ', reviews);
-				// const filteredReviews = reviews.filter( review => review.restaurant_id === restaurantId );
-				// console.log('Filtered: ', filteredReviews);
-				callback(null, reviews);
-		}, restaurantId);
+		
+		let api = {
+			name: 'reviewById',
+			object_type: 'reviews',
+			object_id: restaurantId
+		};
 
+		LocalState.checkforIDBData(api, (error, reviews) => {
+			if(error) callback(null, error);
+			
+			else {
+				const filteredReviews = reviews.filter( r => r.restaurant_id === restaurantId);
+				callback(null, filteredReviews);
+			}
+		});
 	}
 
-
-
-	// Restaurant page URL
-	static urlForRestaurant(restaurant) {
+	static getUrlForRestaurant(restaurant) {
 		return `./restaurant.html?id=${restaurant.id}`;
 	}
 
-	// Restaurant image URL
-	static imageUrlForRestaurant(restaurant) {
+	static getImageUrlForRestaurant(restaurant) {
 		return `/img/${restaurant.photograph}.jpg`;
 	}
 
-	// Map marker for restaurant
-	static mapMarkerForRestaurant(restaurant, map) {
+	static getMapMarkerForRestaurant(restaurant, map) {
 		const marker = new google.maps.Marker({
 			position: restaurant.latlng,
 			title: restaurant.name,
@@ -349,81 +373,39 @@ class DBHelper {
 		return marker;
 	}
 
+	static toggleFavorite(mode, restaurantId) {
 
+		restaurantId = parseInt(restaurantId);
 
-	// Toggles favorite mode
-	static toggleFavorite(mode, id) {
+		let api = {
+			name: 'favorize',
+			object_type: 'restaurant',
+			object_id: restaurantId,
+			data: mode
+		};
 
-		id = parseInt(id);
-
-		// Check if restaurant idb exist, create otherwise
-		let restaurantDbPromise = idb.open('restaurants', 1, (upgradeDB) => {
-			let restaurantStore = upgradeDB.createObjectStore('restaurants', {keyPath: 'id'});
+		LocalState.updateIDBData(api, (error, data) => {
+			error ? console.log(error): console.log(data);
+		});
+		
+		APIService.fetchApiData(api, (error, data) => {
+			error ? console.log(error): console.log(data);
 		});
 
-		DBHelper.getAPIData('favorize', () => {
-			console.log(`Server: Restaurant ID ${id} updated!`)}, id, mode);
-
-		restaurantDbPromise.then( db => {
-			let tx = db.transaction('restaurants');
-			let restaurantStore = tx.objectStore('restaurants');
-			return restaurantStore.get(id);
-
-		}).then(restaurant => {
-
-			mode ? restaurant.is_favorite = true : restaurant.is_favorite = false;
-
-			restaurantDbPromise.then( db => {
-				let tx = db.transaction('restaurants', 'readwrite');
-				let restaurantStore = tx.objectStore('restaurants');
-				restaurantStore.put(restaurant);
-				return restaurantStore.get(id);
-			}).then( (restaurant) => console.log(`Restaurant ${restaurant.name} Favorized!`));
-			
-		});
-	};
+	}
 
 	static addReview(review, callback) {
 
-		callback();
+		let api = {
+			name: 'addReview',
+			data: review
+		};
 
-		if(!navigator.onLine){
-			// store locally
-			localStorage.setItem('review', review);
-			console.log('Local Storage: Review stored');
-
-			// send request when online again document.body event "online" & "offline"
-
-			// document.body.ononline or document.body.onoffline
-			// delete from local storage if request succesful
-		} else {
-			DBHelper.getAPIData('addReview', (data) => console.log(data), null, review);
-			console.log('data sent to api');
-		}
-
+		// Send to LocalState for update
+		APIService.fetchApiData(api, (error, data) => {
+			error ? console.log(error) : console.log(data);
+		});
 
 	}
+
 }
-
-// For sending Form offline
-window.addEventListener('offline', (event) => {
-	console.log('Browser: Offline now!');
-});
-
-window.addEventListener('online', (event) => {
-
-	let review = localStorage.getItem('review');
-
-	if(review !== null) {
-
-		review = review.split(',');
-		console.log(review);
-
-		DBHelper.getAPIData('addReview', (data) => console.log(data), null, review);
-		console.log('data sent to api');
-
-		localStorage.removeItem('review');
-		console.log('Local Storage: Review removed')
-	}
-	console.log('Browser: Online again!');
-});
