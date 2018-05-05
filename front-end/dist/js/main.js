@@ -1,6 +1,7 @@
 let restaurants, neighborhoods, cuisines;
-var map;
-var markers = [];
+let map;
+let mapLoaded = false;
+let markers = [];
 
 // Register service worker and fetch neighborhoods & cuisines
 document.addEventListener('DOMContentLoaded', event => {
@@ -10,11 +11,22 @@ document.addEventListener('DOMContentLoaded', event => {
 		object_type: 'restaurants'
 	};
 
+	// Attach EventHandlers
+	// Initialize Google Map on click or change filter
+	document.getElementById('map').addEventListener('click', initMap);
+	document.getElementById('cuisines-select').addEventListener('change', e => {
+		if (!mapLoaded) initMap();
+	});
+	document.getElementById('neighborhoods-select').addEventListener('change', e => {
+		if (!mapLoaded) initMap();
+	});
+
 	LocalState.checkforIDBData(api, (error, data) => {
 		console.log('Initial Load finished!');
 		fetchNeighborhoods();
 		fetchCuisines();
 		registerServiceWorker();
+		updateRestaurants();
 	});
 });
 
@@ -78,7 +90,7 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
 };
 
 // Initialize Google Maps, called from HTML, update restaurants
-window.initMap = () => {
+initMap = () => {
 	let loc = {
 		lat: 40.722216,
 		lng: -73.987501
@@ -88,7 +100,9 @@ window.initMap = () => {
 		center: loc,
 		scrollwheel: false
 	});
+	// document.getElementById('map-placeholder').remove();
 	updateRestaurants();
+	mapLoaded = true;
 };
 
 // Update page and map for current restaurants
@@ -133,7 +147,7 @@ resetRestaurants = restaurants => {
 	ul.innerHTML = '';
 
 	// Remove all map markers
-	self.markers.forEach(m => m.setMap(null));
+	if (mapLoaded) self.markers.forEach(m => m.setMap(null));
 	self.markers = [];
 	self.restaurants = restaurants;
 };
@@ -144,7 +158,8 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 	restaurants.forEach(restaurant => {
 		ul.append(createRestaurantHTML(restaurant));
 	});
-	addMarkersToMap();
+	if (mapLoaded) addMarkersToMap();
+	reLoadImages();
 };
 
 // Create restaurant HTML
@@ -230,6 +245,4 @@ addMarkersToMap = (restaurants = self.restaurants) => {
 		});
 		self.markers.push(marker);
 	});
-
-	reLoadImages();
 };
