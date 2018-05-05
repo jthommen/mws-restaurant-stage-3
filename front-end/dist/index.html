@@ -28,8 +28,13 @@
     <section id="map-container" aria-hidden="true" role="presentation">
       <div id="map-wrapper">
         <div id="map">
-          <img id="map-placeholder" src="/img/maps-placeholder.png">
-        </div>
+          <picture>
+            <source media="(max-width: 400px)" srcset="/img/maps-placeholder-small.png">
+            <source media="(max-width: 640px)" srcset="/img/maps-placeholder-medium.png">
+            <img id="map-placeholder" 
+            src="/img/maps-placeholder.png" alt="Google Maps of New York with pinned places">
+          </picture>
+      </div>
       </div>
     </section>
     <section>

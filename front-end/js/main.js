@@ -4,6 +4,7 @@ let restaurants,
 let map;
 let mapLoaded = false;
 let markers = [];
+let observer;
 
 
 // Register service worker and fetch neighborhoods & cuisines
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 		if(!mapLoaded) initMap();
 	});
 
+	// Start loading data
 	LocalState.checkforIDBData(api, (error, data) => {
 		console.log('Initial Load finished!');
 		fetchNeighborhoods();
@@ -128,17 +130,34 @@ updateRestaurants = () => {
 	});
 };
 
-// Lazy load images once rest of the page has fully loaded
-reLoadImages = () => {
-	let images = document.getElementsByTagName('img');
+// Image lazy loading
 
-	for(var i=0; i < images.length; i++) {
-		if (images[i].getAttribute('data-src')) {
-			images[i].setAttribute('src', images[i].getAttribute('data-src'));
+// Attach observer for image lazy loading
+lazyLoadingObserver = () => {
+	const restaurantImages = document.querySelectorAll('.restaurant-img');
+	const observerConfig = {
+		rootMargin: '50px 0px',
+		threshold: 0.01
+	};
+	observer = new IntersectionObserver(onIntersection, observerConfig);
+	restaurantImages.forEach( image => observer.observe(image));
+};
+
+// Lazy load images once rest of the page has fully loaded
+function onIntersection(entries) {
+
+	entries.forEach(entry => {
+	  	if (entry.intersectionRatio > 0) {
+
+			observer.unobserve(entry.target);
+
+			if(entry.target.getAttribute('data-src')) {
+				entry.target.setAttribute('src', entry.target.getAttribute('data-src'));
+			}
 		}
-	}
-	console.log('Images Lazy Loaded!');
-}
+	});
+  }
+
 
 // Clear current restaurants, filter and map marker
 resetRestaurants = (restaurants) => {
@@ -160,7 +179,7 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 		ul.append(createRestaurantHTML(restaurant));
 	});
 	if(mapLoaded) addMarkersToMap();
-	reLoadImages();
+	lazyLoadingObserver();
 };
 
 // Create restaurant HTML

@@ -16,6 +16,7 @@ self.addEventListener('install', (event) => {
 		'/css/restaurant-styles.css',
 		'/img/icons/favorite.svg',
 		'/img/icons/favorized.svg',
+		'/img/icons/icon-placeholder.png',
 		'/img/1.jpg',
 		'/img/2.jpg',
 		'/img/3.jpg',

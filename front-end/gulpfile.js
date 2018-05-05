@@ -42,7 +42,6 @@ gulp.task('scripts-dist', function() {
 		.pipe(uglify())
 		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('dist/js'));
-
 });
 
 gulp.task('lint', function() {
@@ -86,4 +85,48 @@ gulp.task('styles', function() {
 		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('dist/css'))
 		.pipe(browserSync.stream());
+});
+
+// Resize images
+gulp.task('resize-images', () => {  
+    const front_end_images =
+        gulp.src('/img/**/*')
+
+    del(['dist/images/*'])
+
+    front_end_images
+        .pipe(imageResize({
+            width: 200,
+            height: 200,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-full'
+        }))
+        .pipe(gulp.dest('public/images'))
+
+    front_end_images
+        .pipe(imageResize({
+            width: 100,
+            height: 100,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-full'
+        }))
+        .pipe(gulp.dest('public/images'))
+
+    front_end_images
+        .pipe(imageResize({
+            width: 100,
+            height: 100,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-thumb'
+        }))
+        .pipe(gulp.dest('public/images'))
 });
