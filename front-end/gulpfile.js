@@ -25,11 +25,12 @@ gulp.task('default', ['copy-html', 'copy-images', 'styles', 'lint', 'scripts','s
 	});
 });
 
-gulp.task('prod', ['copy-html', 'copy-images','service-worker', 'styles', 'lint', 'scripts-dist']);
+gulp.task('prod', ['copy-html', 'copy-images', 'styles', 'lint', 'scripts-dist']);
 
 gulp.task('scripts', function() {
 	gulp.src('js/**/*.js')
 		.pipe(babel())
+		//.pipe(concat('scripts.js'))
 		.pipe(gulp.dest('dist/js'));
 });
 
@@ -37,6 +38,7 @@ gulp.task('scripts-dist', function() {
 	gulp.src('js/**/*.js')
 		.pipe(sourcemaps.init())
 		.pipe(babel())
+		//.pipe(concat('scripts.js'))
 		.pipe(uglify())
 		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('dist/js'));
@@ -81,7 +83,50 @@ gulp.task('styles', function() {
 			browsers: ['last 2 versions']
 		}))
 		.pipe(sourcemaps.write())
-		.pipe(concat('bundle.css'))
 		.pipe(gulp.dest('dist/css'))
 		.pipe(browserSync.stream());
+});
+
+// Resize images
+gulp.task('resize-images', () => {  
+    const front_end_images =
+        gulp.src('/img/**/*')
+
+    del(['dist/images/*'])
+
+    front_end_images
+        .pipe(imageResize({
+            width: 200,
+            height: 200,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-full'
+        }))
+        .pipe(gulp.dest('public/images'))
+
+    front_end_images
+        .pipe(imageResize({
+            width: 100,
+            height: 100,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-full'
+        }))
+        .pipe(gulp.dest('public/images'))
+
+    front_end_images
+        .pipe(imageResize({
+            width: 100,
+            height: 100,
+            crop: true,
+            upscale: false
+        }))
+        .pipe(rename(function (path) {
+            path.basename += '-thumb'
+        }))
+        .pipe(gulp.dest('public/images'))
 });
