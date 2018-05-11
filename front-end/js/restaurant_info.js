@@ -1,5 +1,7 @@
 let restaurant;
-var map;
+let map;
+let focusedElementBeforeModal;
+let modal;
 
 /**
  * Initialize Google map, called from HTML.
@@ -115,6 +117,7 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
  */
 fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	const container = document.getElementById('reviews-container');
+	modal = document.getElementById('add-review-modal');
 
 	if(!document.getElementById('review-title')){
 		const title = document.createElement('h3');
@@ -130,6 +133,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 		addReviewButton.innerHTML = 'Add Review';
 		addReviewButton.onclick = () => {
 			modal.style.display = 'block';
+			makeModalAccessible();
 		};
 		container.appendChild(addReviewButton);
 	}
@@ -200,35 +204,75 @@ createReviewHTML = (review) => {
 	return container;
 };
 
-// Bring review modal to life
-let modal = document.getElementById('add-review-modal');
-let closeBtn = document.getElementsByClassName('close')[0];
+makeModalAccessible = () => {
 
-// Close on pressing ESC
-window.addEventListener('keyup', (event) => {
-	if (event.keyCode == 27) {
+	let modalToggle = document.getElementById('toggle-review-modal');
+	let closeBtn = document.getElementsByClassName('close')[0];
+
+	// Trapping focus in the modal while it's open
+	focusedElementBeforeModal = document.activeElement;
+	let focusableElementsString = 'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex="0"], [contenteditable]';
+	let focusableElements = modal.querySelectorAll(focusableElementsString);
+	focusableElements = Array.prototype.slice.call(focusableElements); // Convert NodeList to Arra<
+	let firstTabStop = focusableElements[0];
+	let lastTabStop = focusableElements[focusableElements.length -1];
+	modal.addEventListener('keydown', trapTabKey);
+	firstTabStop.focus();
+
+	// Closing Mechanisms
+	function closeModal() {
 		modal.style.display = 'none';
-	} 
-});
-
-// Close on Close Button
-closeBtn.onclick = () => modal.style.display = "none";
-
-// Close on clicking outside modal
-window.onclick = (event) => {
-	if(event.target == modal) {
-		modal.style.display = 'none';
+		focusedElementBeforeModal.focus();
 	}
-}
 
-// load modal on load to better develop
-window.onload = (event) => {
-	modal.style.display = 'block';
-}
+	function trapTabKey (e) {
+
+		// if TAB key pressed
+		if(e.keyCode === 9) {
+
+			// if SHIFT + TAB
+			if(e.shiftKey) {
+
+				if(document.activeElement === firstTabStop) {
+					e.preventDefault();
+					lastTabStop.focus();
+				}
+
+			// TAB				
+			} else {
+
+				if(document.activeElement === lastTabStop) {
+					e.preventDefault();
+					firstTabStop.focus();
+				}
+
+			}
+		}
+
+		// Close on pressing ESC
+		if(e.keyCode === 27) closeModal();
+
+	};
+
+	// Closing Mechanisms
+	closeBtn.onclick = () => closeModal();
+
+	// Close on clicking outside modal
+	window.onclick = (event) => {
+		if(event.target == modal) {
+			modal.style.display = 'none';
+		}
+	}
+};
+
+
 
 // Form validation & submission
 addReview = () => {
+	
 	event.preventDefault();
+
+	// Getting the data from the form
 	let restaurantId = getParameterByName('id');
 	let name = document.getElementById('review-author').value;
 	let rating;
@@ -238,14 +282,14 @@ addReview = () => {
 	let errorContainer = document.getElementById('form-error');
 
 	// Basic Form Validation
-	if(name.length < 2 || name.length > 50) errors.push('<p>Please enter a name with 3-50 characters.</p>');
+	if(name.length < 3 || name.length > 50) errors.push('<p>Please enter a name with 3-50 characters.</p>');
 	
 	if(document.querySelector('input[name="rating"]:checked')) {
 		rating = document.querySelector('input[name="rating"]:checked').value;
 	} else {
 		errors.push('<p>Please choose a rating.</p>');
 	}
-	if(comments.length > 250 || comments.length < 0) errors.push('<p>Please write comments with between 25-250 characters in length. </p>');
+	if(comments.length > 250 || comments.length < 25) errors.push('<p>Please write comments with between 25-250 characters in length. </p>');
 	
 	if(errors.length > 0) {
 		errorContainer.innerHTML = errors.join('');

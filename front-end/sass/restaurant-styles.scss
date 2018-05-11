@@ -277,6 +277,10 @@
   width: 1.1em;
 }
 
+.rating > input[type=radio]:focus + label {
+  border: 1px solid #f18200;
+}
+
 .rating > *:hover,
 .rating > *:hover ~ label,
 .rating:not(:hover) > input:checked ~label {
