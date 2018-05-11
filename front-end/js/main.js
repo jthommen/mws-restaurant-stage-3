@@ -216,7 +216,11 @@ createRestaurantHTML = (restaurant) => {
 	li.append(neighborhood);
 
 	const address = document.createElement('p');
-	address.innerHTML = restaurant.address;
+
+	const addressBreakpoint = restaurant.address.indexOf(',')+1;
+	const addressFormatted = [restaurant.address.slice(0, addressBreakpoint), '</br>', restaurant.address.slice(addressBreakpoint)].join('');
+	address.innerHTML = addressFormatted;
+
 	li.append(address);
 
 	const more = document.createElement('a');
