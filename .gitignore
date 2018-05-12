@@ -119,6 +119,5 @@ nbproject
 .node_history
 .vscode
 dist
-front-end/dist
 
 back-end/.tmp/localDiskDb.db

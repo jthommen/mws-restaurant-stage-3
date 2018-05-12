@@ -28,9 +28,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	// Start loading data
 	LocalState.checkforIDBData(api, (error, data) => {
 		console.log('Initial Load finished!');
+		registerServiceWorker();
 		fetchNeighborhoods();
 		fetchCuisines();
-		registerServiceWorker();
 		updateRestaurants();
 	});
 

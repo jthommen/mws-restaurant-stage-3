@@ -21,9 +21,9 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2017-09-14T14:01:27.653Z",
+        "updatedAt": "2018-05-12T21:10:37.829Z",
         "id": 1,
-        "is_favorite": false
+        "is_favorite": "false"
       },
       {
         "name": "Emily",
@@ -528,6 +528,15 @@
         "createdAt": "2018-05-03T18:33:50.591Z",
         "updatedAt": "2018-05-03T18:33:50.591Z",
         "id": 32
+      },
+      {
+        "name": "JTH",
+        "rating": 4,
+        "comments": "Hello there, this is my awesome review. ",
+        "restaurant_id": 3,
+        "createdAt": "2018-05-12T21:11:11.627Z",
+        "updatedAt": "2018-05-12T21:11:11.627Z",
+        "id": 33
       }
     ]
   },
@@ -583,7 +592,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 32
+      "id": 33
     }
   }
 }

@@ -56,7 +56,7 @@ class ApiService {
 		}
 
 		fetch(api_url,fetch_options).then( (response) => {
-			console.log(`Server: ${api.name} api called`);
+			console.log(`API: ${api.name} api called`);
 			
 			const contentType = response.headers.get('content-type');
 			if(contentType && contentType.indexOf('application/json') !== -1 ) {
@@ -65,6 +65,7 @@ class ApiService {
 				return 'API call successfull';
 			}
 		}).then( (data) => {
+			console.log(`API: ${api.name} Fetch successful!`);
 			callback(null, data);
 		}).catch( error => callback(error, null));
 
@@ -134,6 +135,8 @@ class LocalState {
 				console.log(`IDB: No ${api.name} found`);
 
 				ApiService.fetchApiData(api, (error, data) => {
+
+					localStorage.setItem('dataRefreshed', new Date());
 
 					LocalState.setupIDBStores(api.object_type).then( db => {
 						let tx = db.transaction(api.object_type, 'readwrite');
@@ -391,7 +394,7 @@ class LocalState {
 		});
 		
 		ApiService.fetchApiData(api, (error, data) => {
-			error ? console.log(error): console.log(`Server: ${data.name} updated`);
+			error ? console.log(error): console.log(`API: ${data.name} updated`);
 		});
 
 	}
