@@ -15,7 +15,7 @@
 10. Build production files with ```gulp prod```
 11. Change into production directory with ```cd dist```
 12. Run node server with ```serve```
-13. Open browser, paste address from clipboard
+13. Open  browserwindow/tab in incognito/private mode & paste URL from clipboard
 14. Open Dev Tools, run performance audit
 ---
  ## Web Technologies used

@@ -25,7 +25,7 @@ gulp.task('default', ['copy-html', 'copy-images', 'styles', 'lint', 'scripts','s
 	});
 });
 
-gulp.task('prod', ['copy-html', 'copy-images', 'styles', 'lint', 'scripts-dist']);
+gulp.task('prod', ['copy-html', 'copy-images', 'styles', 'lint', 'scripts-dist', 'service-worker']);
 
 gulp.task('scripts', function() {
 	gulp.src('js/**/*.js')
