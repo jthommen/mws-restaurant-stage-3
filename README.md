@@ -4,14 +4,14 @@
 1. Clone/download repository and navigate to folder in console/terminal window
 ### Back-End
 2. change into back-end folder with ```cd back-end```
-3. Install Sails.js globally with ```npm i sails -g``` 
+3. Install Sails.js globally with ```npm i sails -g``` you might need to install sails locally in the back-end folder with ```npm i sails```
 4. Run API server in back-end folder with ```node server```
 ### Front-End 
 5. Open new console/terminal window
 6. change into front-end folder with ```cd front-end```
-7. Install npm packages with ```npm install```
-8. Install gulp globally with ```npm i gulp -g```
-9. Install serve globally  with ```npm i serve -g```
+7. Install gulp globally with ```npm i gulp -g```
+8. Install serve globally  with ```npm i serve -g```
+9. Install npm packages with ```npm install```
 10. Build production files with ```gulp prod```
 11. Change into production directory with ```cd dist```
 12. Run node server with ```serve```
