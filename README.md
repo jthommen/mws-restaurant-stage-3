@@ -21,6 +21,7 @@
  ## Web Technologies used
 * HTML
 * Vanilla JS
+* SASS
 * IndexedDB wrapper by [Jake Archibald](https://github.com/jakearchibald/idb)
 * Modern Browser APIs:
   * Service Worker
